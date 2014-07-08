@@ -11,47 +11,67 @@ module Reactor::Subscribable
 
   class StaticSubscriberFactory
 
-    def self.create(event, method = nil, options = {}, &block)
-      handler_class_prefix = event == '*' ? 'Wildcard': event.to_s.camelize
-      i = 0
-      begin
-        new_class = "#{handler_class_prefix}Handler#{i}"
-        i+= 1
-      end while Reactor::StaticSubscribers.const_defined?(new_class)
+    class << self
+      def create(event, method = nil, options = {}, &block)
+        klass = Class.new do
+          include Sidekiq::Worker
 
-      klass = Class.new do
-        include Sidekiq::Worker
+          class_attribute :method, :delay, :source, :in_memory, :dont_perform
 
-        class_attribute :method, :delay, :source, :in_memory, :dont_perform
+          def perform(data)
+            return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
+            event = Reactor::Event.new(data)
+            if method.is_a?(Symbol)
+              source.delay_for(delay).send(method, event)
+            else
+              method.call(event)
+            end
+          end
 
-        def perform(data)
-          return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
-          event = Reactor::Event.new(data)
-          if method.is_a?(Symbol)
-            source.delay_for(delay).send(method, event)
-          else
-            method.call(event)
+          def self.perform_where_needed(data)
+            if in_memory
+              new.perform(data)
+            else
+              perform_async(data)
+            end
           end
         end
 
-        def self.perform_where_needed(data)
-          if in_memory
-            new.perform(data)
-          else
-            perform_async(data)
-          end
+        class_name = compose_class_name(options[:source], event, method)
+        Reactor::StaticSubscribers.const_set(class_name, klass)
+
+        klass.tap do |k|
+          k.method = method || block
+          k.delay = options[:delay] || 0
+          k.source = options[:source]
+          k.in_memory = options[:in_memory]
+          k.dont_perform = Reactor.test_mode?
         end
       end
 
-      Reactor::StaticSubscribers.const_set(new_class, klass)
+      def compose_class_name(klass, event, method)
+        class_name = klass.try(:name) || 'AnonymousClass'
+        method_name = method.is_a?(Symbol) ? method.to_s.camelize : 'Block'
+        event = event == '*' ? 'Wildcard': event.to_s.camelize
 
-      klass.tap do |k|
-        k.method = method || block
-        k.delay = options[:delay] || 0
-        k.source = options[:source]
-        k.in_memory = options[:in_memory]
-        k.dont_perform = Reactor.test_mode?
+        new_class = prepare_class_string(class_name, event, method_name)
+        new_class << block_number(new_class) if method_name == 'Block'
+        new_class
+      end
+
+      def prepare_class_string(class_name, event, method)
+        "#{class_name}On#{event}Calls#{method}"
+      end
+
+      def block_number(class_name)
+        i = 0
+        i += 1 while Reactor::StaticSubscribers.const_defined?("#{class_name}#{i}")
+        i.to_s
       end
     end
+
+    private_class_method :compose_class_name,
+                         :prepare_class_string,
+                         :block_number
   end
 end

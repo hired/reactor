@@ -39,8 +39,8 @@ describe Reactor::Subscribable do
 
     describe 'building uniquely named subscriber handler classes' do
       it 'adds a static subscriber to the global lookup constant' do
-        expect(Reactor::SUBSCRIBERS['puppy_delivered'][0]).to eq(Reactor::StaticSubscribers::PuppyDeliveredHandler0)
-        expect(Reactor::SUBSCRIBERS['puppy_delivered'][1]).to eq(Reactor::StaticSubscribers::PuppyDeliveredHandler1)
+        expect(Reactor::SUBSCRIBERS['puppy_delivered'][0]).to eq(Reactor::StaticSubscribers::AuctionOnPuppyDeliveredCallsRingBell)
+        expect(Reactor::SUBSCRIBERS['puppy_delivered'][1]).to eq(Reactor::StaticSubscribers::AuctionOnPuppyDeliveredCallsBlock0)
       end
     end
 
@@ -70,25 +70,25 @@ describe Reactor::Subscribable do
     describe 'in_memory flag' do
       it 'doesnt fire perform_async when true' do
         Auction.should_receive(:puppies!)
-        Reactor::StaticSubscribers::CatDeliveredHandler0.should_not_receive(:perform_async)
+        Reactor::StaticSubscribers::AuctionOnCatDeliveredCallsBlock0.should_not_receive(:perform_async)
         Reactor::Event.publish(:cat_delivered)
       end
 
       it 'fires perform_async when falsey' do
-        Reactor::StaticSubscribers::WildcardHandler0.should_receive(:perform_async)
+        Reactor::StaticSubscribers::AuctionOnWildcardCallsBlock0.should_receive(:perform_async)
         Reactor::Event.publish(:puppy_delivered)
       end
     end
 
     describe '#perform' do
       it 'returns :__perform_aborted__ when Reactor is in test mode' do
-        Reactor::StaticSubscribers::TestPuppyDeliveredHandler0.new.perform({}).should == :__perform_aborted__
+        Reactor::StaticSubscribers::TestModeAuctionOnTestPuppyDeliveredCallsBlock0.new.perform({}).should == :__perform_aborted__
         Reactor::Event.publish(:test_puppy_delivered)
       end
 
       it 'performs normally when specifically enabled' do
         Reactor.enable_test_mode_subscriber(TestModeAuction)
-        Reactor::StaticSubscribers::TestPuppyDeliveredHandler0.new.perform({}).should_not == :__perform_aborted__
+        Reactor::StaticSubscribers::TestModeAuctionOnTestPuppyDeliveredCallsBlock0.new.perform({}).should_not == :__perform_aborted__
         Reactor::Event.publish(:test_puppy_delivered)
       end
     end
