@@ -1,4 +1,5 @@
 class Reactor::Subscriber < ActiveRecord::Base
+  include GlobalID::Identification
   attr_accessor :event
 
   def event_name=(event)

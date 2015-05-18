@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["winfred", "walt", "nate", "petermin"]
   spec.email         = ["winfred@hired.com", "walt@hired.com", "nate@hired.com", "kengteh.min@gmail.com"]
   spec.description   = %q{ rails chrono reactor }
-  spec.summary       = %q{ Sidekiq/ActiveRecord pubsub lib }
+  spec.summary       = %q{ ActiveJob/ActiveRecord pubsub lib }
   spec.homepage      = ""
   spec.license       = "MIT"
 
@@ -18,13 +18,14 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "sidekiq", '< 4.0'
-  spec.add_dependency 'activerecord', '< 5.0'
+  spec.add_dependency 'activejob', '~> 4.2'
+  spec.add_dependency 'activerecord', '~> 4.2'
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec", "~> 3.2.0"
   spec.add_development_dependency "rspec-its"
+  spec.add_development_dependency "timecop"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-byebug"
   spec.add_development_dependency "sqlite3"

@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 class Auction < ActiveRecord::Base
+  include GlobalID::Identification
+
   on_event :bid_made do |event|
     event.target.update_column :status, 'first_bid_made'
   end
@@ -8,13 +10,8 @@ class Auction < ActiveRecord::Base
   on_event :puppy_delivered, :ring_bell
   on_event :puppy_delivered, -> (event) { }
   on_event :any_event, -> (event) {  puppies! }
-  on_event :pooped, :pick_up_poop, delay: 5.minutes
   on_event '*' do |event|
-    event.actor.more_puppies! if event.name == 'another_event'
-  end
-
-  on_event :cat_delivered, in_memory: true do |event|
-    puppies!
+    event.actor.more_puppies!(event.time) if event.name == 'another_event'
   end
 
   def self.ring_bell(event)
@@ -29,7 +26,6 @@ Reactor.in_test_mode do
 end
 
 describe Reactor::Subscribable do
-  let(:scheduled) { Sidekiq::ScheduledSet.new }
   before { Reactor::TEST_MODE_SUBSCRIBERS.clear }
 
   describe 'on_event' do
@@ -45,17 +41,9 @@ describe Reactor::Subscribable do
       end
     end
 
-    describe 'binding symbol of class method' do
-      it 'fires on event' do
-        expect(Auction).to receive(:ring_bell)
-        Reactor::Event.publish(:puppy_delivered)
-      end
-
-      it 'can be delayed' do
-        expect(Auction).to receive(:pick_up_poop)
-        expect(Auction).to receive(:delay_for).with(5.minutes).and_return(Auction)
-        Reactor::Event.perform('pooped', {})
-      end
+    it 'binds symbol of class method' do
+      expect(Auction).to receive(:ring_bell)
+      Reactor::Event.publish(:puppy_delivered)
     end
 
     it 'binds proc' do
@@ -68,16 +56,13 @@ describe Reactor::Subscribable do
       Reactor::Event.publish(:another_event, actor: Auction.create!(start_at: 5.minutes.from_now))
     end
 
-    describe 'in_memory flag' do
-      it 'doesnt fire perform_async when true' do
-        expect(Auction).to receive(:puppies!)
-        expect(Reactor::StaticSubscribers::CatDeliveredHandler0).not_to receive(:perform_async)
-        Reactor::Event.publish(:cat_delivered)
-      end
-
-      it 'fires perform_async when falsey' do
-        expect(Reactor::StaticSubscribers::WildcardHandler0).to receive(:perform_async)
-        Reactor::Event.publish(:puppy_delivered)
+    describe 'time deserialization' do
+      it 'accepts wildcard event name' do
+        now = Time.current
+        expect_any_instance_of(Auction).to receive(:more_puppies!) do |instance, time|
+          expect(time).to be_within(1.second).of(now)
+        end
+        Reactor::Event.publish(:another_event, actor: Auction.create!(start_at: 5.minutes.from_now), time: now)
       end
     end
 

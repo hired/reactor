@@ -10,6 +10,13 @@ RSpec::Matchers.define :publish_event do |name, data = {}|
 
     expect(Reactor::Event).to have_received(:publish).with(name, a_hash_including(defaults.merge(data))).at_least(:once)
   end
+
+  match_when_negated do |block|
+    allow(Reactor::Event).to receive(:publish)
+    expect(Reactor::Event).to_not receive(:publish).with(name, anything)
+    block.call
+    true
+  end
 end
 
 RSpec::Matchers.define :publish_events do |*names|
