@@ -13,6 +13,9 @@ class Reactor::Event
 
   def perform(name, data)
     data = data.with_indifferent_access
+    if Reactor.test_mode?
+      Reactor.record_test_event(name, data)
+    end
 
     if data['actor_type']
       actor = data["actor_type"].constantize.unscoped.find(data["actor_id"])
