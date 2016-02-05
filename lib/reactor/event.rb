@@ -37,7 +37,7 @@ class Reactor::Event
                     end
 
     if need_to_fire
-      data.merge!(fired_at: Time.current, name: name)
+      data.merge!(name: name)
       fire_block_subscribers(data, name)
     end
   end
@@ -63,7 +63,7 @@ class Reactor::Event
       if defined?(Rails::Console) && ENV['RACK_ENV'] == 'production' && data[:srsly].blank?
         raise ArgumentError.new(CONSOLE_CONFIRMATION_MESSAGE)
       end
-      message = new(data.merge(event: name, uuid: SecureRandom.uuid))
+      message = new(data.merge(event: name, uuid: SecureRandom.uuid, published_at: Time.current))
 
       if message.at
         perform_at message.at, name, message.__data__
