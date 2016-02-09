@@ -1,6 +1,15 @@
 module Reactor::Subscribable
   extend ActiveSupport::Concern
 
+  def self.included(base)
+    if base.included_modules.include?(Sidekiq::Worker) && !base.instance_methods.include?(:perform)
+      base.send(:define_method, :perform) do |method, data|
+        event = Reactor::Event.new(data)
+        self.class.public_send(method, event)
+      end
+    end
+  end
+
   module ClassMethods
     def on_event(*args, &block)
       options = args.extract_options!
@@ -26,9 +35,13 @@ module Reactor::Subscribable
 
         def perform(data)
           return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
+
           event = Reactor::Event.new(data)
+
           if method.is_a?(Symbol)
-            ActiveSupport::Deprecation.silence do
+            if source.included_modules.include?(Sidekiq::Worker)
+              source.perform_in(delay, method, data)
+            else
               source.delay_for(delay).send(method, event)
             end
           else

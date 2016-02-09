@@ -20,11 +20,27 @@ class Auction < ActiveRecord::Base
   def self.ring_bell(event)
     "ring ring! #{event}"
   end
+
+  def self.pick_up_poop(event); end
 end
 
 Reactor.in_test_mode do
-  class TestModeAuction < ActiveRecord::Base
+  class TestModeAuction
+    include Reactor::Subscribable
+
     on_event :test_puppy_delivered, -> (event) { "success" }
+    on_event :test_normal_delay, :do_normal_thing, delay: 5.minutes
+
+    def self.do_normal_thing(event); end
+  end
+
+  class TestWorker
+    include Sidekiq::Worker
+    include Reactor::Subscribable
+
+    on_event :test_sidekiq_delay, :do_sidekiq_thing, delay: 5.minutes
+
+    def self.do_sidekiq_thing(event); end
   end
 end
 
@@ -81,16 +97,66 @@ describe Reactor::Subscribable do
       end
     end
 
-    describe '#perform' do
-      it 'returns :__perform_aborted__ when Reactor is in test mode' do
-        expect(Reactor::StaticSubscribers::TestPuppyDeliveredHandler0.new.perform({})).to eq(:__perform_aborted__)
-        Reactor::Event.publish(:test_puppy_delivered)
+    describe 'sidekiq perform definition hack' do
+      subject { klass.instance_methods }
+
+      context 'when not a sidekiq worker' do
+        let(:klass) { TestModeAuction }
+        it { is_expected.not_to include(:perform) }
       end
 
-      it 'performs normally when specifically enabled' do
-        Reactor.enable_test_mode_subscriber(TestModeAuction)
-        expect(Reactor::StaticSubscribers::TestPuppyDeliveredHandler0.new.perform({})).not_to eq(:__perform_aborted__)
-        Reactor::Event.publish(:test_puppy_delivered)
+      context 'when a sidekiq worker' do
+        let(:klass) { TestWorker }
+        it { is_expected.to include(:perform) }
+      end
+    end
+
+    describe '#perform' do
+      subject(:perform) { handler.perform({actor_id: 55}) }
+      let(:handler) { Reactor::StaticSubscribers::TestPuppyDeliveredHandler0.new }
+      let(:source) { handler.source }
+
+      context 'when test mode is not enabled' do
+        it { is_expected.to eq(:__perform_aborted__) }
+      end
+
+      context 'when test mode is enabled' do
+        before { Reactor.enable_test_mode_subscriber(TestModeAuction) }
+
+        it { is_expected.not_to eq(:__perform_aborted__) }
+
+        describe 'delays' do
+          context 'when not a sidekiq worker' do
+            let(:handler) { Reactor::StaticSubscribers::TestNormalDelayHandler0.new }
+
+            it 'calls delay_for on source' do
+              expect(source).to receive(:delay_for).and_call_original
+              expect(source).not_to receive(:perform_in)
+              perform
+            end
+          end
+
+          context 'when a sidekiq worker' do
+            before { Reactor.enable_test_mode_subscriber(TestWorker) }
+            let(:handler) { Reactor::StaticSubscribers::TestSidekiqDelayHandler0.new }
+
+            it 'calls perform_in instead of delay_for' do
+              expect(source).to receive(:perform_in).and_call_original
+              expect(source).not_to receive(:delay_for)
+              perform
+            end
+
+            it 'calls perform on the source with method and data args' do
+              expect_any_instance_of(TestWorker).to receive(:perform).with('do_sidekiq_thing', {'actor_id' => 55})
+              perform
+            end
+
+            it 'calls a class method specified by symbol with event' do
+              expect(TestWorker).to receive(:do_sidekiq_thing).with(Reactor::Event)
+              perform
+            end
+          end
+        end
       end
     end
   end
