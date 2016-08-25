@@ -52,7 +52,7 @@ module Reactor::Subscribable
           return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
           event = Reactor::Event.new(data)
           if method.is_a?(Symbol)
-            source.delay_for(delay).send(method, event)
+            source.perform_in(delay).send(method, event)
           else
             method.call(event)
           end

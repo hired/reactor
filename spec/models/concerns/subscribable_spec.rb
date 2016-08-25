@@ -70,7 +70,7 @@ describe Reactor::Subscribable do
 
       it 'can be delayed' do
         expect(Auction).to receive(:pick_up_poop)
-        expect(Auction).to receive(:delay_for).with(5.minutes).and_return(Auction)
+        expect(Auction).to receive(:perform_in).with(5.minutes).and_return(Auction)
         Reactor::Event.perform('pooped', {})
       end
     end
