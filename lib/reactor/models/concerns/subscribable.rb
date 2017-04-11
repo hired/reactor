@@ -52,8 +52,19 @@ module Reactor::Subscribable
           return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
           opts = opts.with_indifferent_access
           if method.is_a?(Symbol)
-            if opts[:skip_delay]
-              source.send(method, Reactor::Event.new(data))
+            if opts[:skip_delay] || delay.to_i == 0
+              res = source.send(method, Reactor::Event.new(data))
+
+              # FIXME: okay, this is horrible. we need to determine if we're mixed in
+              # to an ActionMailer, ActiveRecord, or what the heck, rather than trying
+              # to guess at this layer.
+              if res.respond_to? :deliver_now
+                res.deliver_now
+              elsif res.respond_to? :deliver
+                res.deliver
+              else
+                res
+              end
             else
               self.class.perform_in(delay, data, skip_delay: true)
             end
