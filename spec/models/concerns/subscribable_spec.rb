@@ -63,6 +63,8 @@ describe Reactor::Subscribable do
     end
 
     describe 'binding symbol of class method' do
+      let(:puppy_handler) { Reactor::StaticSubscribers::Auction::PoopedHandler }
+
       it 'fires on event' do
         expect(Auction).to receive(:ring_bell)
         Reactor::Event.publish(:puppy_delivered)
@@ -70,7 +72,9 @@ describe Reactor::Subscribable do
 
       it 'can be delayed' do
         expect(Auction).to receive(:pick_up_poop)
-        expect(Auction).to receive(:delay_for).with(5.minutes).and_return(Auction)
+        expect(puppy_handler).to receive(:perform_in).with(
+          5.minutes, anything, skip_delay: true
+        ).and_call_original
         Reactor::Event.perform('pooped', {})
       end
     end

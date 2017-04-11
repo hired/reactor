@@ -22,5 +22,17 @@ class Reactor::Subscriber < ActiveRecord::Base
     def fire(subscriber_id, data)
       Reactor::Subscriber.find(subscriber_id).fire data
     end
+
+    def fire_async(subscriber_id, data)
+      SubscriberWorker.perform_async(subscriber_id, data)
+    end
+  end
+
+  class SubscriberWorker
+    include Sidekiq::Worker
+
+    def perform(subscriber_id, data)
+      Reactor::Subscriber.find(subscriber_id).fire data.with_indifferent_access
+    end
   end
 end

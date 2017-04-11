@@ -48,13 +48,17 @@ module Reactor::Subscribable
 
         class_attribute :method, :delay, :source, :in_memory, :dont_perform
 
-        def perform(data)
+        def perform(data, opts = {})
           return :__perform_aborted__ if dont_perform && !Reactor::TEST_MODE_SUBSCRIBERS.include?(source)
-          event = Reactor::Event.new(data)
+          opts = opts.with_indifferent_access
           if method.is_a?(Symbol)
-            source.delay_for(delay).send(method, event)
+            if opts[:skip_delay]
+              source.send(method, Reactor::Event.new(data))
+            else
+              self.class.perform_in(delay, data, skip_delay: true)
+            end
           else
-            method.call(event)
+            method.call(Reactor::Event.new(data))
           end
         end
 

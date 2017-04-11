@@ -11,8 +11,10 @@ require 'reactor/testing/matchers'
 
 require 'rspec/its'
 
+REDIS_URL = ENV["REDISTOGO_URL"].presence || ENV["REDIS_URL"] || 'redis://127.0.0.1:6379/4'
+
 Sidekiq.configure_server do |config|
-  config.redis = { url: ENV["REDISTOGO_URL"] }
+  config.redis = { url: REDIS_URL }
 
   database_url = ENV['DATABASE_URL']
   if database_url
@@ -22,7 +24,19 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.configure_client do |config|
-  config.redis = { url: ENV["REDISTOGO_URL"] }
+  config.redis = { url: REDIS_URL }
+end
+
+# remove Sidekiq .delay and .delay_for extensions
+# https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/rails.rb
+[Sidekiq::Extensions::ActiveRecord,
+ Sidekiq::Extensions::ActionMailer,
+ Sidekiq::Extensions::Klass].each do |mod|
+  mod.module_eval do
+    remove_method :delay if respond_to?(:delay)
+    remove_method :delay_for if respond_to?(:delay_for)
+    remove_method :delay_until if respond_to?(:delay_until)
+  end
 end
 
 

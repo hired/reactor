@@ -21,6 +21,19 @@ describe Reactor::Subscriber do
     end
   end
 
+  describe 'fire_async' do
+    let(:klass) { MySubscriber }
+    let(:subscriber) { klass.create!(event_name: :you_name_it) }
+    subject { subscriber }
+
+    it 'executes block give' do
+      expect_any_instance_of(klass).to receive(:fire).with(
+        some: 'random', event: 'data'
+      )
+      klass.fire_async subscriber.id, some: 'random', event: 'data'
+    end
+  end
+
 
   describe 'matcher' do
     before { MySubscriber.create!(event_name: '*') }
@@ -29,6 +42,17 @@ describe Reactor::Subscriber do
     it 'can be set to star to bind to all events' do
       expect_any_instance_of(MySubscriber).to receive(:fire).with(hash_including('random' => 'data', 'event' => 'this_event'))
       Reactor::Event.publish(:this_event, {random: 'data'})
+    end
+  end
+
+  describe 'SubscriberWorker' do
+    let(:klass) { Reactor::Subscriber::SubscriberWorker }
+    let(:subscriber) { MySubscriber.create!(event_name: :you_name_it) }
+    let(:event_data) { Hash[some: 'random', event: 'data'] }
+
+    it 'fires passed in subscriber' do
+      expect_any_instance_of(MySubscriber).to receive(:fire).with(event_data)
+      klass.new.perform(subscriber.id, event_data)
     end
   end
 end
