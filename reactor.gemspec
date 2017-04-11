@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Reactor::VERSION
   spec.authors       = ["winfred", "walt", "nate", "petermin"]
   spec.email         = ["winfred@hired.com", "walt@hired.com", "nate@hired.com", "kengteh.min@gmail.com"]
-  spec.description   = %q{ rails chrono reactor }
-  spec.summary       = %q{ Sidekiq/ActiveRecord pubsub lib }
+  spec.description   = %q{ Sidekiq pub/sub interface }
+  spec.summary       = %q{ Sidekiq pub/sub lib, allowing it to act as a global message bus. Extensions for Rails included. }
   spec.homepage      = ""
   spec.license       = "MIT"
 

@@ -142,7 +142,7 @@ Once you write your own action_event to describe your event data model's base at
 <dt>index =></dt>
 <dd>"pets_indexed"</dd>
 </dl>
- 
+
 <dl>
 <dt>show =></dt>
 <dd>"pet_viewed", target: @pet</dd>
@@ -167,7 +167,7 @@ Once you write your own action_event to describe your event data model's base at
 
 <dl>
 <dt>update =></dt>
-<dd> 
+<dd>
 when valid => "pet_updated", target: @pet, changes: @pet.previous_changes.as_json
 <br />
   when invalid => "pet_update_failed", target: @pet,
@@ -183,7 +183,7 @@ when valid => "pet_updated", target: @pet, changes: @pet.previous_changes.as_jso
 
 ##### What for?
 
-If you're obsessive about data like us, you'll have written a '*' subscriber that logs every event fired in the system. With information-dense resource information logged for each action a user performs, it will be trivial for a data analyst to determine patterns in user activity. For example, with the above data being logged for the pet resource, we can easily
+If you're obsessive about data like us, you'll have written a `'*'` subscriber that logs every event fired in the system. With information-dense resource information logged for each action a user performs, it will be trivial for a data analyst to determine patterns in user activity. For example, with the above data being logged for the pet resource, we can easily
 * determine which form field validations are constantly being hit by users
 * see if there are any fields that are consistently ignored on that form until later
 * recover data from the last_snapshot of a destroyed record
@@ -218,14 +218,21 @@ end
 
 ### Testing
 
-Calling `Reactor.test_mode!` enables test mode.  (You should call this as early as possible, before your subscriber classes
-are declared).  In test mode, no subscribers will fire unless they are specifically enabled, which can be accomplished
-by calling
+Calling `Reactor.test_mode!` enables test mode. You should call this as early as possible, before your subscriber classes are declared.
+
+```ruby
+# config/initializers/reactor.rb
+Reactor.test_mode! if Rails.env.test?
+```
+
+In test mode, no subscribers will fire unless they are specifically enabled, which can be accomplished by calling
+
 ```ruby
 Reactor.enable_test_mode_subscriber(MyAwesomeSubscriberClass)
 ```
 
 We also provide
+
 ```ruby
 Reactor.with_subscriber_enabled(MyClass) do
   # stuff

@@ -88,6 +88,8 @@ describe Reactor::Publishable do
     end
 
     context 'conditional firing' do
+      let(:subscriber_worker) { Reactor::Subscriber::SubscriberWorker }
+
       before do
         Sidekiq::Testing.fake!
         Sidekiq::Worker.clear_all
@@ -108,7 +110,9 @@ describe Reactor::Publishable do
         auction.start_at = 3.day.from_now
         auction.save!
 
-        expect{ Reactor::Event.perform(@job_args[0], @job_args[1]) }.to change{ Sidekiq::Extensions::DelayedClass.jobs.size }
+        expect{ Reactor::Event.perform(@job_args[0], @job_args[1]) }.to change {
+          subscriber_worker.jobs.count
+        }.by(1)
       end
 
       it 'does not call the subscriber when if is set to false' do

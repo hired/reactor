@@ -118,7 +118,7 @@ class Reactor::Event
   def fire_database_driven_subscribers(data, name)
     #TODO: support more matching?
     Reactor::Subscriber.where(event_name: [name, '*']).each do |subscriber|
-      Reactor::Subscriber.delay.fire subscriber.id, data
+      Reactor::Subscriber.fire_async subscriber.id, data
     end
   end
 
