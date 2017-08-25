@@ -18,6 +18,18 @@ require 'reactor/testing/matchers'
 
 require 'rspec/its'
 
+class ApplicationRecord < ActiveRecord::Base
+  self.abstract_class = true
+  include Reactor::Publishable
+  include Reactor::Subscribable
+end
+
+class Pet < ApplicationRecord
+end
+
+class ArbitraryModel < ApplicationRecord
+end
+
 REDIS_URL = ENV["REDISTOGO_URL"] || ENV["REDIS_URL"] || "redis://localhost:6379/4"
 
 ActionMailer::Base.delivery_method = :test

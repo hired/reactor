@@ -37,6 +37,3 @@ module Reactor
     Reactor::StaticSubscribers
   end
 end
-
-ActiveRecord::Base.send(:include, Reactor::Publishable)
-ActiveRecord::Base.send(:include, Reactor::Subscribable)

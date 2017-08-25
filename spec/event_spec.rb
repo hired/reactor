@@ -8,7 +8,7 @@ module MyModule
   end
 end
 
-class ArbitraryModel < ActiveRecord::Base
+class ArbitraryModel < ApplicationRecord
 
   on_event :barfed, handler_name: :bad do
     raise 'UNEXPECTED!'

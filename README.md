@@ -28,7 +28,8 @@ Or install it yourself as:
 
 ## Usage
 
-Well, this is evolving, so it's probably best to go read the specs.
+Well, this is evolving, so it's probably best to go read the specs as
+well as below.
 
 
 ### Barebones API
@@ -38,6 +39,29 @@ Reactor::Event.publish(:event_name, any: 'data', you: 'want')
 ```
 
 ### ActiveModel extensions
+
+```
+class ApplicationRecord < ActiveRecord::Base
+  self.abstract_class = true
+
+  include Reactor::Subscribable
+  include Reactor::Publishable
+end
+```
+
+or if you want to encourage a specific data model, ex: encourage Users to be actors.
+
+```
+class ApplicationRecord < ActiveRecord::Base
+  self.abstract_class = true
+
+  include Reactor::Subscribable
+end
+
+class User < ApplicationRecord
+  include Reactor::Publishable
+end
+```
 
 #### Publishable
 

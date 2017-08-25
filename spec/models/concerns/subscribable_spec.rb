@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-class Auction < ActiveRecord::Base
+class Auction < ApplicationRecord
   on_event :bid_made do |event|
     event.target.update_column :status, 'first_bid_made'
   end
@@ -68,7 +68,7 @@ class KittenMailer < ActionMailer::Base
 end
 
 Reactor.in_test_mode do
-  class TestModeAuction < ActiveRecord::Base
+  class TestModeAuction < ApplicationRecord
     on_event :test_puppy_delivered, -> (event) { "success" }
   end
 end

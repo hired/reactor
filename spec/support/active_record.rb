@@ -38,8 +38,3 @@ ActiveRecord::Migration.create_table :arbitrary_models do |t|
   t.timestamps null: false
 end
 
-class Pet < ActiveRecord::Base
-end
-
-class ArbitraryModel < ActiveRecord::Base
-end

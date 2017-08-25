@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'sidekiq/testing'
 
-class Publisher < ActiveRecord::Base
+class Publisher < ApplicationRecord
   belongs_to :pet
 
   def ring_timeout
