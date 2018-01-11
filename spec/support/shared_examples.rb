@@ -24,22 +24,12 @@ shared_examples_for 'configurable subscriber worker' do
       end
     end
 
-    context 'for async workers' do
+    context 'for not delayed workers' do
       let(:klass) { MyEventWorker }
       subject { klass.perform_where_needed(event_data) }
 
       it 'uses perform_async to execute wherever' do
         expect(klass).to receive(:perform_async).with(event_data)
-        subject
-      end
-    end
-
-    context 'for immediate workers' do
-      let(:klass) { MyImmediateWorker }
-      subject { klass.perform_where_needed(event_data) }
-
-      it 'creates and executes new instance' do
-        expect_any_instance_of(klass).to receive(:perform).with(event_data)
         subject
       end
     end

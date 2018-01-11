@@ -1,7 +1,7 @@
 module Reactor
   class Subscription
 
-    attr_reader :source, :event_name, :action, :handler_name, :delay, :async, :worker_class,
+    attr_reader :source, :event_name, :action, :handler_name, :delay, :worker_class,
                 :deprecated, :sidekiq_options
 
     def self.build_handler_name(event_name, handler_name_option = nil)
@@ -24,7 +24,6 @@ module Reactor
       @action = options[:action] || block
 
       @delay = options[:delay].to_i
-      @async = determine_async(options)
       @deprecated = !!options[:deprecated]
       @sidekiq_options = options[:sidekiq_options] || {}
       build_worker_class
@@ -56,20 +55,6 @@ module Reactor
 
     private
 
-    # options[:in_memory] is a legacy way of setting async to false -
-    # see Reactor::Workers::EventWorker#perform_where_needed
-    def determine_async(options = {})
-      if options[:async].nil?
-        if options[:in_memory].nil?
-          true
-        else
-          !options[:in_memory]
-        end
-      else
-        !!options[:async]
-      end
-    end
-
     def build_worker_class
       namespace.send(:remove_const, handler_name) if handler_defined?
 
@@ -83,7 +68,6 @@ module Reactor
       Class.new(Reactor::Workers::EventWorker) do
         self.source = subscription.source
         self.action = subscription.action
-        self.async  = subscription.async
         self.delay  = subscription.delay
         self.deprecated  = subscription.deprecated
         self.sidekiq_options subscription.sidekiq_options
@@ -96,7 +80,6 @@ module Reactor
         self.source = subscription.source
         self.action = subscription.action
         self.delay  = subscription.delay
-        self.async  = subscription.async
         self.deprecated  = subscription.deprecated
         self.sidekiq_options subscription.sidekiq_options
       end

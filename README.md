@@ -87,15 +87,7 @@ on_event :any_event do |event|
 end
 ```
 
-  Static subscribers like these are automatically placed into Sidekiq and executed in the background
-
-  It's also possible to run a subscriber block in memory like so
-
-```ruby
-on_event :any_event, in_memory: true do |event|
-  event.target.do_something_about_it_and_make_the_user_wait!
-end
-```
+  Static subscribers like these are automatically placed into Sidekiq and executed in the background.
 
   You may also have Sidekiq process a subscriber block on a specific queue or supply any other Sidekiq::Worker options accordingly.
 

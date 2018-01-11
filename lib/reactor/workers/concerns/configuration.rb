@@ -3,7 +3,7 @@ module Reactor
     module Configuration
       extend ActiveSupport::Concern
 
-      CONFIG = [:source, :action, :async, :delay, :deprecated]
+      CONFIG = [:source, :action, :delay, :deprecated]
 
       included do
         include Sidekiq::Worker
@@ -21,10 +21,8 @@ module Reactor
             return
           elsif delay > 0
             event_queue.perform_in(delay, data)
-          elsif async
-            event_queue.perform_async(data)
           else
-            new.perform(data)
+            event_queue.perform_async(data)
           end
           source
         end

@@ -14,7 +14,6 @@ end
 class MyEventWorker < Reactor::Workers::EventWorker
   self.source = SourceSubscriber
   self.action = :fire_worker
-  self.async  = true
   self.delay  = 0
   self.deprecated = false
 end
@@ -22,7 +21,6 @@ end
 class MyBlockWorker < Reactor::Workers::EventWorker
   self.source = SourceSubscriber
   self.action = lambda { |event| :block_ran }
-  self.async  = true
   self.delay  = 0
   self.deprecated = false
 end
@@ -30,16 +28,7 @@ end
 class MyDelayedWorker < Reactor::Workers::EventWorker
   self.source = SourceSubscriber
   self.action = :fire_worker
-  self.async  = true
   self.delay  = 1 # seconds
-  self.deprecated = false
-end
-
-class MyImmediateWorker < Reactor::Workers::EventWorker
-  self.source = SourceSubscriber
-  self.action = :fire_worker
-  self.async  = false
-  self.delay  = 0
   self.deprecated = false
 end
 

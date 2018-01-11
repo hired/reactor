@@ -15,10 +15,6 @@ class Auction < ApplicationRecord
     event.actor.more_puppies! if event.name == 'another_event'
   end
 
-  on_event :cat_delivered, async: false do |event|
-    puppies!
-  end
-
   on_event :a_high_frequency_event, deprecated: true do |event|
     raise 'hell'
   end
@@ -101,7 +97,13 @@ describe Reactor::Subscribable do
       let(:pooped_handler) { Reactor::StaticSubscribers::Auction::PoopedHandler }
 
       it 'fires on event' do
+        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).
+            to receive(:perform_async).and_call_original
         expect(Auction).to receive(:ring_bell)
+        Reactor::Event.publish(:puppy_delivered)
+      end
+
+      it 'fires perform_async when true / default' do
         Reactor::Event.publish(:puppy_delivered)
       end
 
@@ -130,19 +132,6 @@ describe Reactor::Subscribable do
       # have to ensure multiple subscribers are loaded
       expect(KittenMailer).to be_a(Class)
       expect { Reactor::Event.publish :auction }.not_to raise_error
-    end
-
-    describe 'async flag' do
-      it 'doesnt fire perform_async when false' do
-        expect(Auction).to receive(:puppies!)
-        expect(Reactor::StaticSubscribers::Auction::CatDeliveredHandler).not_to receive(:perform_async)
-        Reactor::Event.publish(:cat_delivered)
-      end
-
-      it 'fires perform_async when true / default' do
-        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).to receive(:perform_async)
-        Reactor::Event.publish(:puppy_delivered)
-      end
     end
 
     describe 'deprecate flag for high-frequency events in production deployments' do

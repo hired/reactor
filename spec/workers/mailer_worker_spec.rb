@@ -14,14 +14,12 @@ end
 class MyMailerWorker < Reactor::Workers::MailerWorker
   self.source = MailerSubscriber
   self.action = :fire_mailer
-  self.async  = false
   self.delay  = 0
   self.deprecated = false
 end
 
 class MyBlockMailerWorker < Reactor::Workers::MailerWorker
   self.source = MailerSubscriber
-  self.async  = false
   self.delay  = 0
   self.action = lambda { |event| fire_mailer(event) }
   self.deprecated = false
