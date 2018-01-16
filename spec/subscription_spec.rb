@@ -2,6 +2,31 @@ require 'spec_helper'
 
 describe Reactor::Subscription do
 
+  describe '#initialize builds a worker class' do
+    subject! do
+      described_class.new(source: Pet, event_name: :pooped) do
+      end
+    end
+
+    specify do
+      expect(Reactor::StaticSubscribers::Pet::PoopedHandler < Reactor::Workers::EventWorker)
+          .to be true
+    end
+
+    describe 'when subscriber object has namespace of arbitrary length' do
+      subject! do
+        described_class.new(source: Reactor::Subscription, event_name: :pooped) do
+        end
+      end
+
+      specify do
+        expect(Reactor::StaticSubscribers::Reactor::Subscription::PoopedHandler <
+                   Reactor::Workers::EventWorker)
+            .to be true
+      end
+    end
+  end
+
   describe '.build_handler_name' do
     let(:event_name) { :kitten_sleeping }
 

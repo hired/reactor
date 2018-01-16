@@ -15,6 +15,7 @@ end
 
 require 'reactor'
 require 'reactor/testing/matchers'
+require 'reactor/testing/stubs'
 
 require 'rspec/its'
 
@@ -53,8 +54,6 @@ RSpec.configure do |config|
   # some (optional) config here
 
   config.before(:each) do
-    Reactor.test_mode!
-    Reactor.clear_test_subscribers!
     ActionMailer::Base.deliveries.clear
   end
 

@@ -40,13 +40,16 @@ module Reactor
 
     def namespace
       return @namespace if @namespace
+      @namespace = generate_namespace
+    end
 
-      ns = source.name.demodulize
-      unless Reactor.subscriber_namespace.const_defined?(ns, false)
-        Reactor.subscriber_namespace.const_set(ns, Module.new)
+    def generate_namespace
+      module_chain.reduce(Reactor.subscriber_namespace) do |mod, name|
+        unless mod.const_defined?(name, false)
+          mod.const_set(name, Module.new)
+        end
+        mod.const_get(name)
       end
-
-      @namespace = Reactor.subscriber_namespace.const_get(ns, false)
     end
 
     def mailer_subscriber?
@@ -55,10 +58,14 @@ module Reactor
 
     private
 
+    def module_chain
+      source.name.split('::')
+    end
+
     def build_worker_class
-      namespace.send(:remove_const, handler_name) if handler_defined?
 
       worker_class = mailer_subscriber? ? build_mailer_worker : build_event_worker
+      namespace.send(:remove_const, handler_name) if handler_defined?
       namespace.const_set(handler_name, worker_class)
       @worker_class = namespace.const_get(handler_name)
     end

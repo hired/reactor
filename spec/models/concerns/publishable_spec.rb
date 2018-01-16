@@ -81,7 +81,6 @@ describe Reactor::Publishable do
       before do
         Sidekiq::Testing.fake!
         Sidekiq::Worker.clear_all
-        # TestSubscriber.create! event_name: :conditional_event_on_publish
         publisher
         job = Reactor::Event.jobs.detect do |job|
           job['class'] == 'Reactor::Event' && job['args'].first == 'conditional_event_on_publish'

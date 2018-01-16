@@ -45,7 +45,7 @@ class KittenMailer < ActionMailer::Base
   include Reactor::Subscribable
 
   on_event :auction, handler_name: 'auction' do |event|
-    raise "Event auction"
+    @@fired = true
   end
 
   on_event :kitten_streaming do |event|
@@ -63,20 +63,14 @@ class KittenMailer < ActionMailer::Base
   end
 end
 
-Reactor.in_test_mode do
-  class TestModeAuction < ApplicationRecord
-    on_event :test_puppy_delivered, -> (event) { "success" }
-  end
+class TestModeAuction < ApplicationRecord
+  on_event :test_puppy_delivered, -> (event) { "success" }
 end
 
 describe Reactor::Subscribable do
   let(:scheduled) { Sidekiq::ScheduledSet.new }
 
   describe 'on_event' do
-    before do
-      Reactor.enable_test_mode_subscriber(Auction)
-    end
-
     it 'binds block of code statically to event being fired' do
       expect_any_instance_of(Auction).to receive(:update_column).with(:status, 'first_bid_made')
       Reactor::Event.publish(:bid_made, target: Auction.create!(start_at: 10.minutes.from_now))
@@ -88,8 +82,8 @@ describe Reactor::Subscribable do
         expect(Reactor::SUBSCRIBERS['puppy_delivered'][1]).to eq(Reactor::StaticSubscribers::Auction::DoNothingHandler)
       end
 
-      it 'adds a static subscriber for namespaced classes' do
-        expect(Reactor::SUBSCRIBERS['rain'][0]).to eq(Reactor::StaticSubscribers::MyClass::RainHandler)
+      it 'adds a static subscriber for namespaced classes at the same module depth' do
+        expect(Reactor::SUBSCRIBERS['rain'][0]).to eq(Reactor::StaticSubscribers::MyNamespace::MyClass::RainHandler)
       end
     end
 
@@ -171,17 +165,8 @@ describe Reactor::Subscribable do
     end
 
     describe '#perform' do
-      around(:each) do |example|
-        Reactor.in_test_mode { example.run }
-      end
-
-      it 'returns :__perform_aborted__ when Reactor is in test mode' do
-        expect(Reactor::StaticSubscribers::TestModeAuction::TestPuppyDeliveredHandler.new.perform({})).to eq(:__perform_aborted__)
-        Reactor::Event.publish(:test_puppy_delivered)
-      end
-
       it 'performs normally when specifically enabled' do
-        Reactor.with_subscriber_enabled(TestModeAuction) do
+        allow_reactor_subscriber(TestModeAuction) do
           expect(Reactor::StaticSubscribers::TestModeAuction::TestPuppyDeliveredHandler.new.perform({})).not_to eq(:__perform_aborted__)
           Reactor::Event.publish(:test_puppy_delivered)
         end
@@ -190,8 +175,6 @@ describe Reactor::Subscribable do
   end
 
   describe 'mailers', type: :mailer do
-    before { Reactor.enable_test_mode_subscriber KittenMailer }
-    after  { Reactor.disable_test_mode_subscriber KittenMailer }
 
     def deliveries
       ActionMailer::Base.deliveries

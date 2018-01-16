@@ -25,6 +25,7 @@ class OtherWorker
 end
 
 describe Reactor::Event do
+  before { stub_reactor_subscribers }
 
   let(:model) { ArbitraryModel.create! }
   let(:event_name) { :user_did_this }
@@ -87,24 +88,20 @@ describe Reactor::Event do
   end
 
   describe 'perform' do
-    # before do
-    #   allow(Reactor::Event).
-    # end
     let(:event_name) { :barfed }
 
     it 'fires all subscribers' do
       expect(Reactor::StaticSubscribers::ArbitraryModel::BarfedHandler).
-          to receive(:perform_async).with(hash_including(actor_id: model.id.to_s))
+          to receive(:perform_where_needed).with(hash_including(actor_id: model.id.to_s))
 
       Reactor::Event.perform(event_name, actor_id: model.id.to_s, actor_type: model.class.to_s)
     end
-
 
     describe 'when subscriber throws exception', :sidekiq do
       it 'doesnt matter because it runs in a separate worker process' do
         expect {
           Reactor::Event.perform(
-              'barfed',
+              event_name,
               somethin: 'up',
               actor_id: model.id.to_s,
               actor_type: model.class.to_s

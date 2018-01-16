@@ -49,11 +49,7 @@ module Reactor
       end
 
       def should_perform?
-        if Reactor.test_mode?
-          Reactor.test_mode_subscriber_enabled? source
-        else
-          true
-        end
+        true
       end
 
       private

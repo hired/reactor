@@ -50,25 +50,15 @@ describe Reactor::Workers::EventWorker do
       end
     end
 
-    context 'when should_perform? is false' do
-      let(:klass) { MyEventWorker }
+    before { allow_any_instance_of(klass).to receive(:should_perform?).and_return(true) }
 
-      it 'returns :__perform_aborted__' do
-        expect(subject).to eq(:__perform_aborted__)
-      end
+    it 'calls class method by symbol' do
+      expect(subject).to eq(:method_called)
     end
 
-    context 'when should_perform? is true' do
-      before { allow_any_instance_of(klass).to receive(:should_perform?).and_return(true) }
-
-      it 'calls class method by symbol' do
-        expect(subject).to eq(:method_called)
-      end
-
-      context 'for block workers' do
-        let(:klass) { MyBlockWorker }
-        it { is_expected.to eq(:block_ran) }
-      end
+    context 'for block workers' do
+      let(:klass) { MyBlockWorker }
+      it { is_expected.to eq(:block_ran) }
     end
   end
 

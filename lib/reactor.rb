@@ -11,9 +11,6 @@ require "reactor/subscription"
 require "reactor/models"
 require "reactor/event"
 
-# FIXME: should only be included in test environments
-require "reactor/testing"
-
 module Reactor
   SUBSCRIBERS = {}.with_indifferent_access
 
