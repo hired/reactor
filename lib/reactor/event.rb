@@ -1,6 +1,8 @@
 class Reactor::Event
   include Sidekiq::Worker
 
+  sidekiq_options queue: ENV['REACTOR_QUEUE'] || Sidekiq.default_worker_options['queue']
+
   CONSOLE_CONFIRMATION_MESSAGE = <<-eos
     It looks like you are on a production console. Only fire an event if you intend to trigger 
     all of its subscribers. In order to proceed, you must pass `srsly: true` in the event data.'

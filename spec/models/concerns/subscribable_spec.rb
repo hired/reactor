@@ -166,6 +166,21 @@ describe Reactor::Subscribable do
       end
     end
 
+    describe 'overriding queue options with ENV variable to isolate cascade between processes' do
+      before { ENV['REACTOR_QUEUE'] = 'bulk' }
+      after { ENV.delete('REACTOR_QUEUE') }
+
+      specify do
+        expect_any_instance_of(Reactor::StaticSubscribers::Auction::WildcardHandler).
+            to receive(:perform)
+
+        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).to receive(:set).
+            with(hash_including(queue: 'bulk')).and_call_original
+
+        Reactor::Event.publish(:puppy_delivered)
+      end
+    end
+
     describe '#perform' do
       around(:each) do |example|
         Reactor.in_test_mode { example.run }

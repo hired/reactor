@@ -20,13 +20,18 @@ module Reactor
           if deprecated
             return
           elsif delay > 0
-            perform_in(delay, data)
+            event_queue.perform_in(delay, data)
           elsif async
-            perform_async(data)
+            event_queue.perform_async(data)
           else
             new.perform(data)
           end
           source
+        end
+
+        def event_queue
+          queue_override = ENV['REACTOR_QUEUE']
+          queue_override.present? ? set(queue: queue_override) : self
         end
       end
 
