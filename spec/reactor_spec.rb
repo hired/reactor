@@ -55,5 +55,34 @@ describe Reactor do
         expect(Reactor::TEST_MODE_SUBSCRIBERS).to be_empty
       end
     end
+
+    describe '.with_subscriber_disabled' do
+      before { Reactor.enable_test_mode_subscriber(subscriber) }
+
+      it 'disables a subscriber during test mode' do
+        expect(subscriber).not_to receive :spy_on_me
+        Reactor.with_subscriber_disabled(subscriber) do
+          Reactor::Event.publish :test_event
+        end
+      end
+
+      it 'enables the subscriber outside the block' do
+        expect(Reactor::TEST_MODE_SUBSCRIBERS).to contain_exactly(subscriber)
+        Reactor.with_subscriber_disabled(subscriber) do
+          expect(Reactor::TEST_MODE_SUBSCRIBERS).to be_empty
+        end
+        expect(Reactor::TEST_MODE_SUBSCRIBERS).to contain_exactly(subscriber)
+      end
+
+      it 'correctly handles exceptions inside the block' do
+        expect(Reactor::TEST_MODE_SUBSCRIBERS).to contain_exactly(subscriber)
+        expect {
+          Reactor.with_subscriber_disabled(subscriber) do
+            raise RuntimeError
+          end
+        }.to raise_error(RuntimeError)
+        expect(Reactor::TEST_MODE_SUBSCRIBERS).to contain_exactly(subscriber)
+      end
+    end
   end
 end

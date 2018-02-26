@@ -40,6 +40,13 @@ module Reactor
     disable_test_mode_subscriber klass
   end
 
+  def with_subscriber_disabled(klass)
+    disable_test_mode_subscriber klass
+    yield if block_given?
+  ensure
+    enable_test_mode_subscriber klass
+  end
+
   def clear_test_subscribers!
     test_mode_subscribers.each {|klass| test_mode_subscribers.delete klass }
   end
