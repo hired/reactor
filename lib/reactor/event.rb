@@ -66,6 +66,8 @@ class Reactor::Event
 
       message = new(data.merge(event: name, uuid: SecureRandom.uuid))
 
+      Reactor.validator.call(message)
+
       if message.at
         perform_at message.at, name, message.__data__
       else

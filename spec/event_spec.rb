@@ -78,6 +78,17 @@ describe Reactor::Event do
         ENV['RACK_ENV'] = 'development'
       end
     end
+
+    describe 'using injected validator block' do
+      before { Reactor.validator -> (_event) {raise 'InvalidEvent'} }
+      after { Reactor.validator Reactor::BASE_VALIDATOR }
+
+      it 'gets called and yields flow control' do
+        expect {
+          Reactor::Event.publish(:something)
+        }.to raise_error(RuntimeError, 'InvalidEvent')
+      end
+    end
   end
 
   describe 'perform' do

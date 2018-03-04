@@ -13,6 +13,7 @@ require "reactor/event"
 
 module Reactor
   SUBSCRIBERS = {}.with_indifferent_access
+  BASE_VALIDATOR = -> (_event) { } # default behavior is to not actually validate anything
 
   module_function
 
@@ -31,5 +32,18 @@ module Reactor
 
   def subscriber_namespace
     Reactor::StaticSubscribers
+  end
+
+  #
+  # If you want, you can inject your own validator block in `config/initializers/reactor.rb`
+  #
+  # Reactor.validator -> (event) { Validator.new(event).validate! }
+  #
+  # If not, the default behavior is to do nothing. (see Reactor::BASE_VALIDATOR)
+  #
+  def validator(block = nil)
+    @validator = block if block.present?
+
+    @validator || BASE_VALIDATOR
   end
 end

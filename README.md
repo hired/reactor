@@ -145,6 +145,24 @@ TLDR; Everything is a Sidekiq::Worker, so all the same gotchas apply with regard
 
 This is as easy as write + deploy. Of course your events getting fired won't have a subscriber pick them up until the new subscriber code is deployed in your sidekiq instances, but that's not too surprising.
 
+#### Validating Events On Publish
+
+As of 1.0 you may inject your own validator lambda to handle the logic and flow-control of valid/invalid events.
+
+This is entirely optional and the default behavior is to do nothing, to not validate any data being provided.
+
+```ruby
+# in config/initializers/reactor.rb
+Reactor.validator -> do |event|
+  Activity.build_from_event(event).validate! # you own the performance implications here
+end
+```
+
+We at Hired use this to validate the event's schema as we found having stricter schema definitions 
+gave us more leverage as our team grew.
+
+By injecting your own logic, you can be as permissive or strict as you want. (Throw exceptions if you want, even.)
+
 #### Removing Events and Subscribers
 
 Removing an event is as simple as deleting the line of code that `publish`es it.
