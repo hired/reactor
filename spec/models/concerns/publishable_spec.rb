@@ -91,6 +91,19 @@ describe Reactor::Publishable do
                                                              ))
     end
 
+    it 'publishes an event when the :watch field changes' do
+      publisher
+
+      allow(Reactor::Event).to receive(:publish)
+
+      publisher.update!(start_at: publisher.start_at + 1.week)
+
+      expect(Reactor::Event).to have_received(:publish).with(:on_update,
+                                                             a_hash_including(
+                                                               actor: publisher
+                                                             ))
+    end
+
     context 'conditional firing at publish time' do
       before do
         Sidekiq::Testing.fake!
@@ -200,7 +213,6 @@ describe Reactor::Publishable do
 
     it 'supports immediate events (on create) that get fired once' do
       allow(Reactor::Event).to receive(:perform_async)
-
       expect(Reactor::Event).to receive(:perform_async)
         .with(:woof, hash_including(actor_type: 'Pet'))
       expect(Reactor::Event).to receive(:perform_async)
@@ -213,6 +225,16 @@ describe Reactor::Publishable do
       expect(Reactor::Event).to_not receive(:perform_async).with(:bell)
       expect(Reactor::Event).to_not receive(:perform_async).with(:woof)
       publisher.save
+    end
+
+    it 'supports immediate events (on watch)' do
+      allow(Reactor::Event).to receive(:perform_async)
+
+      expect(Reactor::Event).to receive(:perform_async)
+        .with(:on_update, hash_including(actor_type: 'Publisher')).twice
+
+      publisher
+      publisher.update!(start_at: 1.day.from_now)
     end
 
     it 'supports immediate events (on watch)' do
