@@ -13,6 +13,7 @@ class Publisher < ApplicationRecord
   end
 
   publishes :bell
+  publishes :on_update, watch: :updated_at
   publishes :ring, at: :ring_timeout, watch: :start_at
   publishes :begin, at: :start_at, additional_info: 'curtis was here'
   publishes :conditional_event_on_save, at: :start_at, enqueue_if: -> { we_want_it }
@@ -34,7 +35,7 @@ describe Reactor::Publishable do
     end
 
     it 'publishes an event with provided actor and target methods' do
-      allow(Reactor::Event).to receive(:publish).exactly(5).times
+      allow(Reactor::Event).to receive(:publish).exactly(6).times
       publisher
       expect(Reactor::Event).to have_received(:publish).with(:woof, a_hash_including(actor: pet, target: publisher))
     end
@@ -58,7 +59,7 @@ describe Reactor::Publishable do
       )
     end
 
-    it 'reschedules an event when the :watch field changes' do
+    it 'reschedules an :at event when the :watch field changes' do
       ring_time = publisher.ring_timeout
       new_start_at = publisher.start_at + 1.week
       new_ring_time = new_start_at + 30.seconds
@@ -73,6 +74,20 @@ describe Reactor::Publishable do
           at: new_ring_time,
           actor: publisher,
           was: ring_time
+        )
+      )
+    end
+
+    it 'publishes an event when the :watch field changes' do
+      publisher
+
+      allow(Reactor::Event).to receive(:publish)
+
+      publisher.update!(start_at: publisher.start_at + 1.week)
+
+      expect(Reactor::Event).to have_received(:publish).with(:on_update,
+        a_hash_including(
+          actor: publisher
         )
       )
     end
@@ -190,10 +205,12 @@ describe Reactor::Publishable do
 
 
     it 'supports immediate events (on create) that get fired once' do
+      allow(Reactor::Event).to receive(:perform_async)
+
       expect(Reactor::Event).to receive(:perform_async).
         with(:woof, hash_including(actor_type: 'Pet'))
       expect(Reactor::Event).to receive(:perform_async).
-          with(:bell, hash_including(actor_type: 'Publisher'))
+        with(:bell, hash_including(actor_type: 'Publisher'))
 
       publisher
 
@@ -203,6 +220,16 @@ describe Reactor::Publishable do
       expect(Reactor::Event).to_not receive(:perform_async).with(:woof)
       publisher.save
 
+    end
+
+    it 'supports immediate events (on watch)' do
+      allow(Reactor::Event).to receive(:perform_async)
+
+      expect(Reactor::Event).to receive(:perform_async).
+        with(:on_update, hash_including(actor_type: 'Publisher')).twice
+
+      publisher
+      publisher.update!(start_at: 1.day.from_now)
     end
 
     it 'does publish an event scheduled for the future' do

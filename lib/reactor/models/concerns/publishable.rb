@@ -43,6 +43,9 @@ module Reactor::Publishable
         was: previous_changes[data[:at]].try(:first) || send("#{data[:at]}_was")
       )
       Reactor::Event.reschedule(name, event) if should_fire_reactor_event?(data)
+    else
+      event = event_data_for_signature(data)
+      Reactor::Event.publish(name, event) if should_fire_reactor_event?(data)
     end
   end
 
