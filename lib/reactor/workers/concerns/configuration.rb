@@ -1,19 +1,21 @@
+# frozen_string_literal: true
+
 module Reactor
   module Workers
     module Configuration
       extend ActiveSupport::Concern
 
-      CONFIG = [:source, :action, :delay, :deprecated]
+      CONFIG = %i[source action delay deprecated].freeze
 
       included do
         include Sidekiq::Worker
-        
+
         class_attribute *CONFIG
       end
 
       class_methods do
         def configured?
-          CONFIG.all? {|field| !self.send(field).nil? }
+          CONFIG.all? { |field| !send(field).nil? }
         end
 
         def perform_where_needed(data)
@@ -55,10 +57,8 @@ module Reactor
       private
 
       def raise_unconfigured!
-        settings = Hash[CONFIG.map {|s| [s, self.class.send(s)] }]
-        raise UnconfiguredWorkerError.new(
-            "#{self.class.name} is not properly configured! Here are the settings: #{settings}"
-        )
+        settings = Hash[CONFIG.map { |s| [s, self.class.send(s)] }]
+        raise UnconfiguredWorkerError, "#{self.class.name} is not properly configured! Here are the settings: #{settings}"
       end
     end
   end

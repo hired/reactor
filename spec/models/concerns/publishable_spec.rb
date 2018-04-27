@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'sidekiq/testing'
 
@@ -30,7 +32,7 @@ describe Reactor::Publishable do
     it 'publishes an event with actor_id and actor_type set as self' do
       publisher
       expect(Reactor::Event).to receive(:publish).with(:an_event, what: 'the', actor: publisher)
-      publisher.publish(:an_event, {what: 'the'})
+      publisher.publish(:an_event, what: 'the')
     end
 
     it 'publishes an event with provided actor and target methods' do
@@ -49,13 +51,12 @@ describe Reactor::Publishable do
       publisher.save!
 
       expect(Reactor::Event).to have_received(:reschedule).with(:begin,
-        a_hash_including(
-          at: new_start_at,
-          actor: publisher,
-          was: start_at,
-          additional_info: 'curtis was here'
-        )
-      )
+                                                                a_hash_including(
+                                                                  at: new_start_at,
+                                                                  actor: publisher,
+                                                                  was: start_at,
+                                                                  additional_info: 'curtis was here'
+                                                                ))
     end
 
     it 'reschedules an event when the :watch field changes' do
@@ -69,12 +70,11 @@ describe Reactor::Publishable do
       publisher.save!
 
       expect(Reactor::Event).to have_received(:reschedule).with(:ring,
-        a_hash_including(
-          at: new_ring_time,
-          actor: publisher,
-          was: ring_time
-        )
-      )
+                                                                a_hash_including(
+                                                                  at: new_ring_time,
+                                                                  actor: publisher,
+                                                                  was: ring_time
+                                                                ))
     end
 
     context 'conditional firing at publish time' do
@@ -94,10 +94,10 @@ describe Reactor::Publishable do
 
       it 'calls the subscriber when if is set to true' do
         publisher.we_want_it = true
-        publisher.start_at = 3.day.from_now
+        publisher.start_at = 3.days.from_now
         allow(Reactor::Event).to receive(:perform_at)
         publisher.save!
-        expect(Reactor::Event).to have_received(:perform_at).with(publisher.start_at, :conditional_event_on_publish, anything())
+        expect(Reactor::Event).to have_received(:perform_at).with(publisher.start_at, :conditional_event_on_publish, anything)
 
         Reactor::Event.perform(@job_args[0], @job_args[1])
       end
@@ -107,32 +107,30 @@ describe Reactor::Publishable do
         publisher.start_at = 3.days.from_now
         publisher.save!
 
-        expect{ Reactor::Event.perform(@job_args[0], @job_args[1]) }.to_not change{ Sidekiq::Queues.jobs_by_queue.values.flatten.count }
+        expect { Reactor::Event.perform(@job_args[0], @job_args[1]) }.to_not change { Sidekiq::Queues.jobs_by_queue.values.flatten.count }
       end
 
       it 'keeps the if intact when rescheduling' do
         old_start_at = publisher.start_at
-        publisher.start_at = 3.day.from_now
+        publisher.start_at = 3.days.from_now
         allow(Reactor::Event).to receive(:publish)
-        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_publish, {
-          at: publisher.start_at,
-          actor: publisher,
-          target: nil,
-          was: old_start_at,
-          if: anything
-        })
+        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_publish,
+                                                         at: publisher.start_at,
+                                                         actor: publisher,
+                                                         target: nil,
+                                                         was: old_start_at,
+                                                         if: anything)
         publisher.save!
       end
 
       it 'keeps the if intact when scheduling' do
         start_at = 3.days.from_now
         allow(Reactor::Event).to receive(:publish)
-        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_publish, {
-          at: start_at,
-          actor: anything,
-          target: nil,
-          if: anything
-        })
+        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_publish,
+                                                         at: start_at,
+                                                         actor: anything,
+                                                         target: nil,
+                                                         if: anything)
         Publisher.create!(start_at: start_at)
       end
     end
@@ -165,35 +163,32 @@ describe Reactor::Publishable do
       it 'does rescheduling' do
         old_start_at = publisher.start_at
         publisher.we_want_it = true
-        publisher.start_at = 3.day.from_now
+        publisher.start_at = 3.days.from_now
         allow(Reactor::Event).to receive(:publish)
-        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_save, {
-          at: publisher.start_at,
-          actor: publisher,
-          target: nil,
-          was: old_start_at,
-        })
+        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_save,
+                                                         at: publisher.start_at,
+                                                         actor: publisher,
+                                                         target: nil,
+                                                         was: old_start_at)
         publisher.save!
       end
 
       it 'does conditional scheduling scheduling' do
         start_at = 3.days.from_now
         allow(Reactor::Event).to receive(:publish)
-        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_save, {
-          at: start_at,
-          actor: anything,
-          target: nil,
-        })
+        expect(Reactor::Event).to receive(:publish).with(:conditional_event_on_save,
+                                                         at: start_at,
+                                                         actor: anything,
+                                                         target: nil)
         Publisher.create!(start_at: start_at, we_want_it: true)
       end
     end
 
-
     it 'supports immediate events (on create) that get fired once' do
-      expect(Reactor::Event).to receive(:perform_async).
-        with(:woof, hash_including(actor_type: 'Pet'))
-      expect(Reactor::Event).to receive(:perform_async).
-          with(:bell, hash_including(actor_type: 'Publisher'))
+      expect(Reactor::Event).to receive(:perform_async)
+        .with(:woof, hash_including(actor_type: 'Pet'))
+      expect(Reactor::Event).to receive(:perform_async)
+        .with(:bell, hash_including(actor_type: 'Publisher'))
 
       publisher
 
@@ -202,14 +197,13 @@ describe Reactor::Publishable do
       expect(Reactor::Event).to_not receive(:perform_async).with(:bell)
       expect(Reactor::Event).to_not receive(:perform_async).with(:woof)
       publisher.save
-
     end
 
     it 'does publish an event scheduled for the future' do
       future = Time.now.utc + 1.week
 
-      expect(Reactor::Event).to receive(:perform_at).
-          with(future, :begin, hash_including('additional_info' => 'curtis was here'))
+      expect(Reactor::Event).to receive(:perform_at)
+        .with(future, :begin, hash_including('additional_info' => 'curtis was here'))
 
       Publisher.create!(pet: pet, start_at: future)
     end

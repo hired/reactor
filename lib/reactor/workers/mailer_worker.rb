@@ -1,11 +1,10 @@
-=begin
-MailerWorker has a bit more to do than EventWorker. It has to run the event, then if the
-output is a Mail::Message or the like it needs to deliver it like ActionMailer would
-=end
+# frozen_string_literal: true
+
+# MailerWorker has a bit more to do than EventWorker. It has to run the event, then if the
+# output is a Mail::Message or the like it needs to deliver it like ActionMailer would
 module Reactor
   module Workers
     class MailerWorker
-
       include Reactor::Workers::Configuration
 
       def perform(data)
@@ -14,9 +13,9 @@ module Reactor
         event = Reactor::Event.new(data)
 
         msg = if action.is_a?(Symbol)
-          source.send(action, event)
-        else
-          source.class_exec event, &action
+                source.send(action, event)
+              else
+                source.class_exec event, &action
         end
 
         deliverable?(msg) ? deliver(msg) : msg
@@ -35,7 +34,6 @@ module Reactor
       def deliverable?(msg)
         msg.respond_to?(:deliver_now) || msg.respond_to?(:deliver)
       end
-
     end
   end
 end

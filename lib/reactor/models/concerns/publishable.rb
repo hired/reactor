@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Reactor::Publishable
   extend ActiveSupport::Concern
 
@@ -7,7 +9,7 @@ module Reactor::Publishable
   end
 
   def publish(name, data = {})
-    Reactor::Event.publish(name, data.merge(actor: self) )
+    Reactor::Event.publish(name, data.merge(actor: self))
   end
 
   def reschedule_events
@@ -31,9 +33,7 @@ module Reactor::Publishable
   def reschedule_events_on_update
     self.class.events.each do |name, data|
       attr_changed_method = data[:watch] || data[:at]
-      if previous_changes[attr_changed_method]
-        reschedule(name, data)
-      end
+      reschedule(name, data) if previous_changes[attr_changed_method]
     end
   end
 
@@ -67,9 +67,9 @@ module Reactor::Publishable
 
   def event_data_for_signature(signature)
     signature.merge(
-        actor: (signature[:actor] ? send(signature[:actor]) : self),
-        target: (signature[:target] ? self : nil),
-        at: (signature[:at] ? send(signature[:at]) : nil)
+      actor: (signature[:actor] ? send(signature[:actor]) : self),
+      target: (signature[:target] ? self : nil),
+      at: (signature[:at] ? send(signature[:at]) : nil)
     ).except(:watch, :enqueue_if)
   end
 end

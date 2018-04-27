@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 class SourceSubscriber
   include Reactor::Subscribable
 
-  def self.fire_worker(event)
+  def self.fire_worker(_event)
     :method_called
   end
 end
@@ -20,7 +22,7 @@ end
 
 class MyBlockWorker < Reactor::Workers::EventWorker
   self.source = SourceSubscriber
-  self.action = lambda { |event| :block_ran }
+  self.action = ->(_event) { :block_ran }
   self.delay  = 0
   self.deprecated = false
 end
@@ -61,5 +63,4 @@ describe Reactor::Workers::EventWorker do
       it { is_expected.to eq(:block_ran) }
     end
   end
-
 end

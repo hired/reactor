@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 class Reactor::Event
   include Sidekiq::Worker
 
   sidekiq_options queue: ENV['REACTOR_QUEUE'] || Sidekiq.default_worker_options['queue']
 
   CONSOLE_CONFIRMATION_MESSAGE = <<-eos
-    It looks like you are on a production console. Only fire an event if you intend to trigger 
+    It looks like you are on a production console. Only fire an event if you intend to trigger
     all of its subscribers. In order to proceed, you must pass `srsly: true` in the event data.'
   eos
 
@@ -14,7 +16,7 @@ class Reactor::Event
     self.__data__ = {}.with_indifferent_access
     data.each do |key, value|
       value = value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '') if value.is_a?(String)
-      self.send("#{key}=", value)
+      send("#{key}=", value)
     end
   end
 
@@ -22,7 +24,7 @@ class Reactor::Event
     data = data.with_indifferent_access
 
     if data['actor_type']
-      actor = data["actor_type"].constantize.unscoped.find(data["actor_id"])
+      actor = data['actor_type'].constantize.unscoped.find(data['actor_id'])
       publishable_event = actor.class.events[name.to_sym]
       ifarg = publishable_event[:if] if publishable_event
     end
@@ -37,7 +39,8 @@ class Reactor::Event
                     end
 
     if need_to_fire
-      data.merge!(fired_at: Time.current, name: name)
+      data[:fired_at] = Time.current
+      data[:name] = name
       fire_block_subscribers(data, name)
     end
   end
@@ -55,13 +58,11 @@ class Reactor::Event
   end
 
   class << self
-    def perform(name, data)
-      new.perform(name, data)
-    end
+    delegate :perform, to: :new
 
     def publish(name, data = {})
       if defined?(Rails::Console) && ENV['RACK_ENV'] == 'production' && data[:srsly].blank?
-        raise ArgumentError.new(CONSOLE_CONFIRMATION_MESSAGE)
+        raise ArgumentError, CONSOLE_CONFIRMATION_MESSAGE
       end
 
       message = new(data.merge(event: name, uuid: SecureRandom.uuid))
@@ -93,33 +94,33 @@ class Reactor::Event
         end
       end
 
-      job.delete if job
+      job&.delete
 
-      publish(name, data.except([:was, :if])) if data[:at].try(:future?)
+      publish(name, data.except(%i[was if])) if data[:at].try(:future?)
     end
   end
 
   private
 
-  def try_setter(method, object, *args)
+  def try_setter(method, object, *_args)
     if object.is_a? ActiveRecord::Base
       send("#{method}_id", object.id)
       send("#{method}_type", object.class.to_s)
     else
-      __data__[method.to_s.gsub('=','')] = object
+      __data__[method.to_s.delete('=')] = object
     end
   end
 
   def try_getter(method)
     if polymorphic_association? method
       initialize_polymorphic_association method
-    elsif __data__.has_key?(method)
+    elsif __data__.key?(method)
       __data__[method]
     end
   end
 
   def polymorphic_association?(method)
-    __data__.has_key?("#{method}_type")
+    __data__.key?("#{method}_type")
   end
 
   def initialize_polymorphic_association(method)
