@@ -19,3 +19,4 @@ tags
 .ruby-gemset
 .idea
 gemfiles/*.lock
+Gemfile.lock
