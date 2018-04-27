@@ -41,10 +41,16 @@ Reactor::Event.publish(:event_name, any: 'data', you: 'want')
 
 #### Publishable
 
-  Describe lifecycle events like so
+  The default lifecycle event, without any options, only triggers once when the object is `created`.
 
 ```ruby
 publishes :my_model_created
+```
+
+  If you wish to trigger an event when an attribute changes, or on every change, you can `watch` an attribute like this:
+
+```ruby
+publishes :my_model_updated, watch: :updated_at
 ```
 
   Schedule an event to get published at a specific time. Note: if timestamp is a property on an ActiveRecord::Model
@@ -64,7 +70,7 @@ end
 publishes :reminder_sent, at: :reminder_email_time, watch: :created_at
 ```
 
-  Scheduled events can check conditionally fire -- eg: in 2 days fire reminder_email if the user hasn't already responded. Note that this check will occur at the time the event is intended to fire, after which the state of the model may have changed. 
+  Scheduled events can check conditionally fire -- eg: in 2 days fire reminder_email if the user hasn't already responded. Note that this check will occur at the time the event is intended to fire, after which the state of the model may have changed.
 
 ```ruby
 publishes :reminder_sent, at: :reminder_email_time, if: -> { user.responded == false }
@@ -158,7 +164,7 @@ Reactor.validator -> do |event|
 end
 ```
 
-We at Hired use this to validate the event's schema as we found having stricter schema definitions 
+We at Hired use this to validate the event's schema as we found having stricter schema definitions
 gave us more leverage as our team grew.
 
 By injecting your own logic, you can be as permissive or strict as you want. (Throw exceptions if you want, even.)
@@ -175,8 +181,8 @@ If yes -> deprecate your subscriber first to ensure there are no references left
 on_event :high_frequency_event, :do_something, deprecated: true
 ```
 
-If no -> you can probably just delete the subscriber. 
-In the worst case scenario, you get some background exceptions for a job you didn't intend to have run anyway. Pick your poison. 
+If no -> you can probably just delete the subscriber.
+In the worst case scenario, you get some background exceptions for a job you didn't intend to have run anyway. Pick your poison.
 
 #### Managing Queues
 
@@ -205,4 +211,3 @@ For testing Reactor itself we use Thoughtbot's [appraisal gem](https://github.co
 ## Open Source by [Hired](https://hired.com/?utm_source=opensource&utm_medium=reactor&utm_campaign=readme)
 
 We are Ruby developers ourselves, and we use all of our open source projects in production. We always encourge forks, pull requests, and issues. Get in touch with the Hired Engineering team at _opensource@hired.com_.
-
