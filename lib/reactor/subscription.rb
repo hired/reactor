@@ -1,6 +1,7 @@
+# frozen_string_literal: true
+
 module Reactor
   class Subscription
-
     attr_reader :source, :event_name, :action, :handler_name, :delay, :worker_class,
                 :deprecated, :sidekiq_options
 
@@ -45,9 +46,7 @@ module Reactor
 
     def generate_namespace
       module_chain.reduce(Reactor.subscriber_namespace) do |mod, name|
-        unless mod.const_defined?(name, false)
-          mod.const_set(name, Module.new)
-        end
+        mod.const_set(name, Module.new) unless mod.const_defined?(name, false)
         mod.const_get(name)
       end
     end
@@ -63,7 +62,6 @@ module Reactor
     end
 
     def build_worker_class
-
       worker_class = mailer_subscriber? ? build_mailer_worker : build_event_worker
       namespace.send(:remove_const, handler_name) if handler_defined?
       namespace.const_set(handler_name, worker_class)
@@ -76,8 +74,8 @@ module Reactor
         self.source = subscription.source
         self.action = subscription.action
         self.delay  = subscription.delay
-        self.deprecated  = subscription.deprecated
-        self.sidekiq_options subscription.sidekiq_options
+        self.deprecated = subscription.deprecated
+        sidekiq_options subscription.sidekiq_options
       end
     end
 
@@ -87,10 +85,9 @@ module Reactor
         self.source = subscription.source
         self.action = subscription.action
         self.delay  = subscription.delay
-        self.deprecated  = subscription.deprecated
-        self.sidekiq_options subscription.sidekiq_options
+        self.deprecated = subscription.deprecated
+        sidekiq_options subscription.sidekiq_options
       end
     end
-
   end
 end

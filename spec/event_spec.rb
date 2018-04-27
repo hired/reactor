@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 module MyModule
-  class Pet < ActiveRecord::Base
+  class Pet < ApplicationRecord
   end
 
   class Cat < Pet
@@ -9,7 +11,6 @@ module MyModule
 end
 
 class ArbitraryModel < ApplicationRecord
-
   on_event :barfed, handler_name: :bad do
     raise 'UNEXPECTED!'
   end
@@ -17,7 +18,6 @@ class ArbitraryModel < ApplicationRecord
   on_event :barfed do
     'that was gross'
   end
-
 end
 
 class OtherWorker
@@ -31,7 +31,7 @@ describe Reactor::Event do
   let(:event_name) { :user_did_this }
 
   describe 'encoding' do
-    let(:event) { Reactor::Event.new(thing_one: "\xAD", thing_two: "\xAB", money: "£900", emoji: "\u{1f4a9}") }
+    let(:event) { Reactor::Event.new(thing_one: "\xAD", thing_two: "\xAB", money: '£900', emoji: "\u{1f4a9}") }
 
     it 'strips bad characters' do
       expect(event.thing_one).to eq('')
@@ -51,7 +51,6 @@ describe Reactor::Event do
     let!(:uuid) { 'uuid' }
     before { allow(SecureRandom).to receive(:uuid).and_return(uuid) }
 
-
     it 'fires the first perform and sets message event_id' do
       expect(Reactor::Event).to receive(:perform_async).with(event_name, 'actor_id' => '1', 'event' => :user_did_this, 'uuid' => uuid)
       Reactor::Event.publish(:user_did_this, actor_id: '1')
@@ -67,26 +66,26 @@ describe Reactor::Event do
         stub_const('Rails::Console', Class.new)
         ENV['RACK_ENV'] = 'production'
 
-        expect {
+        expect do
           Reactor::Event.publish(:thing)
-        }.to raise_exception(ArgumentError)
+        end.to raise_exception(ArgumentError)
 
-        expect {
+        expect do
           Reactor::Event.publish(:thing, srsly: true)
-        }.to_not raise_exception
+        end.to_not raise_exception
 
         ENV['RACK_ENV'] = 'development'
       end
     end
 
     describe 'using injected validator block' do
-      before { Reactor.validator -> (_event) {raise 'InvalidEvent'} }
+      before { Reactor.validator ->(_event) { raise 'InvalidEvent' } }
       after { Reactor.validator Reactor::BASE_VALIDATOR }
 
       it 'gets called and yields flow control' do
-        expect {
+        expect do
           Reactor::Event.publish(:something)
-        }.to raise_error(RuntimeError, 'InvalidEvent')
+        end.to raise_error(RuntimeError, 'InvalidEvent')
       end
     end
   end
@@ -95,29 +94,29 @@ describe Reactor::Event do
     let(:event_name) { :barfed }
 
     it 'fires all subscribers' do
-      expect(Reactor::StaticSubscribers::ArbitraryModel::BarfedHandler).
-          to receive(:perform_where_needed).with(hash_including(actor_id: model.id.to_s))
+      expect(Reactor::StaticSubscribers::ArbitraryModel::BarfedHandler)
+        .to receive(:perform_where_needed).with(hash_including(actor_id: model.id.to_s))
 
       Reactor::Event.perform(event_name, actor_id: model.id.to_s, actor_type: model.class.to_s)
     end
 
     it 'sets a fired_at key in event data' do
-      expect(Reactor::StaticSubscribers::ArbitraryModel::BarfedHandler).
-          to receive(:perform_where_needed).with(hash_including(fired_at: a_kind_of(Time)))
+      expect(Reactor::StaticSubscribers::ArbitraryModel::BarfedHandler)
+        .to receive(:perform_where_needed).with(hash_including(fired_at: a_kind_of(Time)))
 
       Reactor::Event.perform(event_name, actor_id: model.id.to_s, actor_type: model.class.to_s)
     end
 
     describe 'when subscriber throws exception', :sidekiq do
       it 'doesnt matter because it runs in a separate worker process' do
-        expect {
+        expect do
           Reactor::Event.perform(
-              event_name,
-              somethin: 'up',
-              actor_id: model.id.to_s,
-              actor_type: model.class.to_s
+            event_name,
+            somethin: 'up',
+            actor_id: model.id.to_s,
+            actor_type: model.class.to_s
           )
-        }.to_not raise_exception
+        end.to_not raise_exception
       end
     end
   end
@@ -131,28 +130,28 @@ describe Reactor::Event do
     end
 
     it 'can schedule and reschedule an event in the future' do
-      expect {
+      expect do
         jid = Reactor::Event.publish :turtle_time, at: time
         expect(scheduled.find_job(jid).score).to eq(time.to_f)
-      }.to change { scheduled.size }.by(1)
+      end.to change { scheduled.size }.by(1)
 
-      expect {
+      expect do
         jid = Reactor::Event.reschedule :turtle_time, at: (time + 2.hours), was: time
         expect(scheduled.find_job(jid).score).to eq((time + 2.hours).to_f)
-      }.to_not change { scheduled.size }
+      end.to_not change { scheduled.size }
     end
 
     it 'will schedule an event in the future even if that event was not previously scheduled in the past' do
-      expect {
+      expect do
         jid = Reactor::Event.reschedule :no_old_turtle_time, at: (time + 2.hours), was: time
         expect(scheduled.find_job(jid).score).to eq((time + 2.hours).to_f)
-      }.to change{ scheduled.size }.by(1)
+      end.to change { scheduled.size }.by(1)
     end
 
     it 'will not schedule an event when the time passed in is nil' do
-      expect {
+      expect do
         Reactor::Event.reschedule :no_old_turtle_time, at: nil, was: time
-      }.to_not change{ scheduled.size }
+      end.to_not change { scheduled.size }
     end
 
     context 'when an actor is passed' do
@@ -161,25 +160,25 @@ describe Reactor::Event do
       it 'will not delete a job which is not associated with the actor' do
         Reactor::Event.publish :turtle_time, at: time
 
-        expect {
+        expect do
           Reactor::Event.reschedule :turtle_time, at: time + 2.hours, was: time, actor: actor
-        }.to change { scheduled.size}.from(1).to(2)
+        end.to change { scheduled.size }.from(1).to(2)
       end
 
       it 'will delete a job associated with the actor' do
         Reactor::Event.publish :turtle_time, at: time, actor: actor
 
-        expect {
+        expect do
           Reactor::Event.reschedule :turtle_time, at: time + 2.hours, was: time, actor: actor
-        }.not_to change { scheduled.size}.from(1)
+        end.not_to change { scheduled.size }.from(1)
       end
 
       it 'will skip jobs of other classes' do
         OtherWorker.perform_in(1.minute, 'foo')
 
-        expect {
+        expect do
           Reactor::Event.reschedule :turtle_time, at: time + 2.hours, was: time, actor: actor
-        }.to change { scheduled.size}.from(1).to(2)
+        end.to change { scheduled.size }.from(1).to(2)
       end
     end
   end
@@ -187,7 +186,7 @@ describe Reactor::Event do
   describe 'event content' do
     let(:cat) { MyModule::Cat.create }
     let(:arbitrary_model) { ArbitraryModel.create }
-    let(:event_data) { {random: 'data', pet_id: cat.id, pet_type: cat.class.to_s, arbitrary_model: arbitrary_model } }
+    let(:event_data) { { random: 'data', pet_id: cat.id, pet_type: cat.class.to_s, arbitrary_model: arbitrary_model } }
     let(:event) { Reactor::Event.new(event_data) }
 
     describe 'data key interaction with internals' do
@@ -206,17 +205,17 @@ describe Reactor::Event do
         context 'accessing the internal __data__' do
           its(:__data__) do
             is_expected.to eq ({
-                  'random' => 'data',
-                  'pet_id' => cat.id,
-                  'pet_type' => 'MyModule::Cat',
-                  'arbitrary_model_id' => arbitrary_model.id,
-                  'arbitrary_model_type' => arbitrary_model.class.name
-                })
+              'random' => 'data',
+              'pet_id' => cat.id,
+              'pet_type' => 'MyModule::Cat',
+              'arbitrary_model_id' => arbitrary_model.id,
+              'arbitrary_model_type' => arbitrary_model.class.name
+            })
           end
         end
 
         context 'a key named "data"' do
-          let(:event_data) { {random: 'data', data: 'info' } }
+          let(:event_data) { { random: 'data', data: 'info' } }
           its(:random) { is_expected.to eq('data') }
           its(:data) { is_expected.to eq 'info' }
         end

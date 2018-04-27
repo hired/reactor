@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #
 # Run this before specs if you want to speed up tests by trading out code coverage into subscribers
 #

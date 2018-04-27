@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #
 # DRY up strict event & data assertions.
 #
@@ -9,7 +11,7 @@ RSpec::Matchers.define :publish_event do |name, data = {}|
   supports_block_expectations
 
   match do |block|
-    defaults = {:actor => anything}
+    defaults = { actor: anything }
 
     allow(Reactor::Event).to receive(:publish)
 
@@ -18,7 +20,6 @@ RSpec::Matchers.define :publish_event do |name, data = {}|
     expect(Reactor::Event).to have_received(:publish).with(name, a_hash_including(defaults.merge(data))).at_least(:once)
   end
 end
-
 
 #
 # DRY up multi-event assertions. Unfortunately can't test key-values with this at the moment.
@@ -31,7 +32,7 @@ RSpec::Matchers.define :publish_events do |*names|
   supports_block_expectations
 
   match do |block|
-    defaults = {:actor => anything}
+    defaults = { actor: anything }
 
     allow(Reactor::Event).to receive(:publish)
 

@@ -1,19 +1,21 @@
-require "active_record"
-require "active_support/hash_with_indifferent_access"
-require "action_mailer"
+# frozen_string_literal: true
 
-require "reactor/version"
-require "reactor/errors"
-require "reactor/static_subscribers"
-require "reactor/workers/concerns/configuration"
-require "reactor/workers"
-require "reactor/subscription"
-require "reactor/models"
-require "reactor/event"
+require 'active_record'
+require 'active_support/hash_with_indifferent_access'
+require 'action_mailer'
+
+require 'reactor/version'
+require 'reactor/errors'
+require 'reactor/static_subscribers'
+require 'reactor/workers/concerns/configuration'
+require 'reactor/workers'
+require 'reactor/subscription'
+require 'reactor/models'
+require 'reactor/event'
 
 module Reactor
   SUBSCRIBERS = {}.with_indifferent_access
-  BASE_VALIDATOR = -> (_event) { } # default behavior is to not actually validate anything
+  BASE_VALIDATOR = ->(_event) {} # default behavior is to not actually validate anything
 
   module_function
 

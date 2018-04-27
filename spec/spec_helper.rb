@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rubygems'
 require 'bundler/setup'
 require 'pry'
@@ -10,7 +12,7 @@ require 'sidekiq/api'
 
 require 'simplecov'
 SimpleCov.start do
-  add_filter "/testing/"
+  add_filter '/testing/'
 end
 
 require 'reactor'
@@ -31,7 +33,7 @@ end
 class ArbitraryModel < ApplicationRecord
 end
 
-REDIS_URL = ENV["REDISTOGO_URL"] || ENV["REDIS_URL"] || "redis://localhost:6379/4"
+REDIS_URL = ENV['REDISTOGO_URL'] || ENV['REDIS_URL'] || 'redis://localhost:6379/4'
 
 ActionMailer::Base.delivery_method = :test
 
@@ -49,7 +51,6 @@ Sidekiq.configure_client do |config|
   config.redis = { url: REDIS_URL }
 end
 
-
 RSpec.configure do |config|
   # some (optional) config here
 
@@ -60,7 +61,7 @@ RSpec.configure do |config|
   # Runs Sidekiq jobs inline by default unless the RSpec metadata :sidekiq is specified,
   # in which case it will use the real Redis-backed Sidekiq queue
   config.before(:each, :sidekiq) do
-    Sidekiq.redis{|r| r.flushall }
+    Sidekiq.redis(&:flushall)
     Sidekiq::Testing.disable!
   end
 
@@ -72,5 +73,5 @@ RSpec.configure do |config|
   # order dependency and want to debug it, you can fix the order by providing
   # the seed, which is printed after each run.
   #     --seed 1234
-  config.order = "random"
+  config.order = 'random'
 end

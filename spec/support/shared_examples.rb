@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 shared_examples_for 'configurable subscriber worker' do
   describe '.configured?' do
     context 'for unconfigured class' do

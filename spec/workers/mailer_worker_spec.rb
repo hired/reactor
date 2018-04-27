@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 class MailerSubscriber < ActionMailer::Base
   include Reactor::Subscribable
 
-  def fire_mailer(event)
+  def fire_mailer(_event)
     mail subject: 'Here is a mailer',
          to: 'reactor@hired.com',
          from: 'test+reactor@hired.com',
@@ -21,7 +23,7 @@ end
 class MyBlockMailerWorker < Reactor::Workers::MailerWorker
   self.source = MailerSubscriber
   self.delay  = 0
-  self.action = lambda { |event| fire_mailer(event) }
+  self.action = ->(event) { fire_mailer(event) }
   self.deprecated = false
 end
 
@@ -47,5 +49,4 @@ describe Reactor::Workers::MailerWorker do
       expect { subject }.to change { ActionMailer::Base.deliveries.count }.by(1)
     end
   end
-
 end

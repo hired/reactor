@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 class Auction < ApplicationRecord
@@ -7,20 +9,19 @@ class Auction < ApplicationRecord
 
   on_event :puppy_delivered, :ring_bell
   on_event :puppy_delivered, handler_name: :do_nothing_handler do |event|
-
   end
-  on_event :any_event, -> (event) {  puppies! }
+  on_event :any_event, ->(_event) { puppies! }
   on_event :pooped, :pick_up_poop, delay: 5.minutes
   on_event '*' do |event|
     event.actor.more_puppies! if event.name == 'another_event'
   end
 
-  on_event :a_high_frequency_event, deprecated: true do |event|
+  on_event :a_high_frequency_event, deprecated: true do |_event|
     raise 'hell'
   end
 
   on_event :event_with_ui_bound,
-           sidekiq_options: { queue: 'highest_priority', retry: false } do |event|
+           sidekiq_options: { queue: 'highest_priority', retry: false } do |_event|
     speedily_execute!
   end
 
@@ -41,10 +42,9 @@ module MyNamespace
 end
 
 class KittenMailer < ActionMailer::Base
-
   include Reactor::Subscribable
 
-  on_event :auction, handler_name: 'auction' do |event|
+  on_event :auction, handler_name: 'auction' do |_event|
     @@fired = true
   end
 
@@ -52,7 +52,7 @@ class KittenMailer < ActionMailer::Base
     kitten_livestream(event)
   end
 
-  def kitten_livestream(event)
+  def kitten_livestream(_event)
     mail(
       to: 'admin@kittens.com',
       from: 'test@kittens.com',
@@ -64,7 +64,7 @@ class KittenMailer < ActionMailer::Base
 end
 
 class TestModeAuction < ApplicationRecord
-  on_event :test_puppy_delivered, -> (event) { "success" }
+  on_event :test_puppy_delivered, ->(_event) { 'success' }
 end
 
 describe Reactor::Subscribable do
@@ -91,8 +91,8 @@ describe Reactor::Subscribable do
       let(:pooped_handler) { Reactor::StaticSubscribers::Auction::PoopedHandler }
 
       it 'fires on event' do
-        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).
-            to receive(:perform_async).and_call_original
+        expect(Reactor::StaticSubscribers::Auction::WildcardHandler)
+          .to receive(:perform_async).and_call_original
         expect(Auction).to receive(:ring_bell)
         Reactor::Event.publish(:puppy_delivered)
       end
@@ -131,21 +131,21 @@ describe Reactor::Subscribable do
     describe 'deprecate flag for high-frequency events in production deployments' do
       it 'doesnt enqueue subscriber worker when true' do
         # so subscriber can be safely deleted in next deploy
-        expect {
+        expect do
           Reactor::Event.publish(:a_high_frequency_event)
-        }.to_not raise_exception
+        end.to_not raise_exception
       end
     end
 
     describe 'passing sidekiq_options through to Sidekiq' do
       it 'passes options to Sidekiq API' do
-        expect(Reactor::StaticSubscribers::Auction::EventWithUiBoundHandler.get_sidekiq_options).
-            to eql({ 'queue' => 'highest_priority', 'retry' => false })
+        expect(Reactor::StaticSubscribers::Auction::EventWithUiBoundHandler.get_sidekiq_options)
+          .to eql('queue' => 'highest_priority', 'retry' => false)
       end
 
       it 'keeps default options when none supplied' do
-        expect(Reactor::StaticSubscribers::Auction::WildcardHandler.get_sidekiq_options).
-            to eql({ 'queue' => 'default', 'retry' => true })
+        expect(Reactor::StaticSubscribers::Auction::WildcardHandler.get_sidekiq_options)
+          .to eql('queue' => 'default', 'retry' => true)
       end
     end
 
@@ -154,11 +154,11 @@ describe Reactor::Subscribable do
       after { ENV.delete('REACTOR_QUEUE') }
 
       specify do
-        expect_any_instance_of(Reactor::StaticSubscribers::Auction::WildcardHandler).
-            to receive(:perform)
+        expect_any_instance_of(Reactor::StaticSubscribers::Auction::WildcardHandler)
+          .to receive(:perform)
 
-        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).to receive(:set).
-            with(hash_including(queue: 'bulk')).and_call_original
+        expect(Reactor::StaticSubscribers::Auction::WildcardHandler).to receive(:set)
+          .with(hash_including(queue: 'bulk')).and_call_original
 
         Reactor::Event.publish(:puppy_delivered)
       end
@@ -175,13 +175,12 @@ describe Reactor::Subscribable do
   end
 
   describe 'mailers', type: :mailer do
-
     def deliveries
       ActionMailer::Base.deliveries
     end
 
     it 'sends an email from a method on_event', focus: true do
-      expect { Reactor::Event.publish(:kitten_streaming) }.to change{ deliveries.count }.by(1)
+      expect { Reactor::Event.publish(:kitten_streaming) }.to change { deliveries.count }.by(1)
     end
   end
 end
