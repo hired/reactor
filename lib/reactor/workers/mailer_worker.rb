@@ -15,8 +15,8 @@ module Reactor
         msg = if action.is_a?(Symbol)
                 source.send(action, event)
               else
-                source.class_exec event, &action
-        end
+                source.new.instance_exec(event, &action)
+              end
 
         deliverable?(msg) ? deliver(msg) : msg
       end

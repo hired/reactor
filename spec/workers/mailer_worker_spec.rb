@@ -11,6 +11,13 @@ class MailerSubscriber < ActionMailer::Base
          from: 'test+reactor@hired.com',
          body: 'an example email body'
   end
+
+  on_event :test_email do |_event|
+    mail subject: 'Here is a mailer',
+         to: 'reactor@hired.com',
+         from: 'test+reactor@hired.com',
+         body: 'an example email body'
+  end
 end
 
 class MyMailerWorker < Reactor::Workers::MailerWorker
@@ -47,6 +54,14 @@ describe Reactor::Workers::MailerWorker do
 
     it 'sends an email from the block' do
       expect { subject }.to change { ActionMailer::Base.deliveries.count }.by(1)
+    end
+  end
+
+  context 'for an inline event block' do
+    it 'sends an email from the block' do
+      expect do
+        Reactor::Event.publish(:test_email, actor: nil)
+      end.to change { ActionMailer::Base.deliveries.count }.by(1)
     end
   end
 end
