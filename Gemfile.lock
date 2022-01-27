@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    reactor (2.0.2)
+    reactor (2.1.0)
       rails (~> 5.2.3)
-      sidekiq (> 4.0)
+      sidekiq (< 6)
 
 GEM
   remote: https://rubygems.org/
@@ -65,7 +65,7 @@ GEM
     erubi (1.10.0)
     globalid (1.0.0)
       activesupport (>= 5.0)
-    i18n (1.9.0)
+    i18n (1.9.1)
       concurrent-ruby (~> 1.0)
     json (2.1.0)
     loofah (2.13.0)
@@ -91,6 +91,8 @@ GEM
       pry (~> 0.10)
     racc (1.6.0)
     rack (2.2.3)
+    rack-protection (2.1.0)
+      rack
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
     rails (5.2.6)
@@ -117,8 +119,8 @@ GEM
       method_source
       rake (>= 0.8.7)
       thor (>= 0.19.0, < 2.0)
-    rake (12.0.0)
-    redis (4.5.1)
+    rake (13.0.6)
+    redis (4.1.4)
     rspec (3.6.0)
       rspec-core (~> 3.6.0)
       rspec-expectations (~> 3.6.0)
@@ -135,10 +137,11 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.6.0)
     rspec-support (3.6.0)
-    sidekiq (6.4.0)
-      connection_pool (>= 2.2.2)
+    sidekiq (5.2.9)
+      connection_pool (~> 2.2, >= 2.2.2)
       rack (~> 2.0)
-      redis (>= 4.2.0)
+      rack-protection (>= 1.5.0)
+      redis (>= 3.3.5, < 4.2)
     simplecov (0.14.1)
       docile (~> 1.1.0)
       json (>= 1.8, < 3)
@@ -169,7 +172,7 @@ DEPENDENCIES
   bundler
   pry (~> 0.10)
   pry-byebug (~> 3.4)
-  rake (~> 12.0)
+  rake (~> 13.0)
   reactor!
   rspec (~> 3.6)
   rspec-its (~> 1.2)
