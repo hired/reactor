@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    reactor (2.0.2)
+    reactor (2.1.0)
       rails (> 5.2, < 6.1)
       sidekiq (> 4.0, < 6.0)
 
@@ -89,9 +89,11 @@ GEM
     marcel (1.0.2)
     method_source (0.8.2)
     mini_mime (1.1.2)
+    mini_portile2 (2.8.0)
     minitest (5.15.0)
     nio4r (2.5.8)
-    nokogiri (1.13.3-arm64-darwin)
+    nokogiri (1.13.3)
+      mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     pry (0.10.4)
       coderay (~> 1.1.0)
