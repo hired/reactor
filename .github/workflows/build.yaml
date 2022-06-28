@@ -1,0 +1,39 @@
+name: Ruby
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+        - 6379/tcp
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        ruby: [2.5, 2.6]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+      - name: Install redis cli
+        run: sudo apt-get install -y redis-server
+
+      - run: bundle exec rake
+
+      - run: bundle exec appraisal install
+
+      - run: bundle exec appraisal rake

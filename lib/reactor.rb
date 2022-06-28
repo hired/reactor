@@ -46,4 +46,12 @@ module Reactor
 
     @validator || BASE_VALIDATOR
   end
+
+  def rails_6_or_greather?
+    Gem.loaded_specs['rails'].version.to_s.to_i >= 6
+  end
+
+  def parents_method
+    Reactor.rails_6_or_greather? ? :module_parents : :parents
+  end
 end

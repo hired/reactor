@@ -31,7 +31,7 @@ module Reactor
 
     def handler_defined?
       namespace.const_defined?(handler_name) &&
-        namespace.const_get(handler_name).parents.include?(Reactor.subscriber_namespace)
+        namespace.const_get(handler_name).send(Reactor.parents_method).include?(Reactor.subscriber_namespace)
     end
 
     def event_handler_names
