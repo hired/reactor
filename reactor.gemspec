@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'reactor'
   spec.version       = Reactor::VERSION
   spec.authors       = %w[winfred walt nate petermin christospappas therabidbanana]
-  spec.email         = ['gabe@hired.com', 'christos@hired.com']
+  spec.email         = %w[gabe@hired.com christos@hired.com]
   spec.description   = 'rails chrono reactor'
   spec.summary       = 'Sidekiq/ActiveRecord pubsub lib'
   spec.homepage      = ''
