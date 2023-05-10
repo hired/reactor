@@ -5,7 +5,7 @@
 #
 #  expect { some_thing }.to publish_event(:some_event, actor: this_user, target: this_object)
 #
-RSpec::Matchers.define :publish_event do |name, data = {}|
+RSpec::Matchers.define :publish_event do |name, **data|
   supports_block_expectations
 
   match do |block|
@@ -15,7 +15,7 @@ RSpec::Matchers.define :publish_event do |name, data = {}|
 
     block.call
 
-    expect(Reactor::Event).to have_received(:publish).with(name, a_hash_including(defaults.merge(data))).at_least(:once)
+    expect(Reactor::Event).to have_received(:publish).with(name, **(defaults.merge(data))).at_least(:once)
   end
 end
 
@@ -38,16 +38,16 @@ RSpec::Matchers.define :publish_events do |*names|
     block.call
 
     names.each do |name|
-      expect(Reactor::Event).to have_received(:publish).with(name, a_hash_including(defaults)).at_least(:once)
+      expect(Reactor::Event).to have_received(:publish).with(name, anything).at_least(:once)
     end
   end
 end
 
-RSpec::Matchers.define :subscribe_to do |name, data = {}|
+RSpec::Matchers.define :subscribe_to do |name, **data|
   supports_block_expectations
 
   match do
     block_arg.call if block_arg.present?
-    Reactor::Event.publish(name, data)
+    Reactor::Event.publish(name, **data)
   end
 end

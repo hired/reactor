@@ -11,7 +11,7 @@ module Reactor
       def perform(data)
         raise_unconfigured! unless configured?
         return :__perform_aborted__ unless should_perform?
-        event = Reactor::Event.new(data)
+        event = Reactor::Event.new(**data)
 
         msg = if action.is_a?(Symbol)
           source.send(action, event)

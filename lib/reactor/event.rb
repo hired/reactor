@@ -11,7 +11,7 @@ class Reactor::Event
 
   attr_accessor :__data__
 
-  def initialize(data = {})
+  def initialize(**data)
     self.__data__ = {}.with_indifferent_access
     data.each do |key, value|
       value = value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '') if value.is_a?(String)
@@ -66,7 +66,7 @@ class Reactor::Event
         raise ArgumentError.new(CONSOLE_CONFIRMATION_MESSAGE)
       end
 
-      message = new(data.merge(event: name, uuid: SecureRandom.uuid))
+      message = new(**data.merge(event: name, uuid: SecureRandom.uuid))
 
       Reactor.validator.call(message)
 
@@ -77,7 +77,7 @@ class Reactor::Event
       end
     end
 
-    def reschedule(name, data = {})
+    def reschedule(name, **data)
       scheduled_jobs = Sidekiq::ScheduledSet.new
       # Note that scheduled_jobs#fetch returns only jobs matching the data[:was]
       # timestamp - down to fractions of a second
@@ -98,7 +98,7 @@ class Reactor::Event
 
       job.delete if job
 
-      publish(name, data.except([:was, :if])) if data[:at].try(:future?)
+      publish(name, **data.except([:was, :if])) if data[:at].try(:future?)
     end
   end
 

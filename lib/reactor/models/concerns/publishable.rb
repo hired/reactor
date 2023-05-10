@@ -7,12 +7,12 @@ module Reactor::Publishable
   end
 
   def publish(name, **data)
-    Reactor::Event.publish(name, data.merge(actor: self) )
+    Reactor::Event.publish(name, **data.merge(actor: self) )
   end
 
   def reschedule_events
     self.class.events.each do |name, data|
-      reschedule(name, data)
+      reschedule(name, **data)
     end
   end
 
@@ -32,7 +32,7 @@ module Reactor::Publishable
     self.class.events.each do |name, data|
       attr_changed_method = data[:watch] || data[:at]
       if previous_changes[attr_changed_method]
-        reschedule(name, data)
+        reschedule(name, **data)
       end
     end
   end
@@ -42,14 +42,14 @@ module Reactor::Publishable
       event = event_data_for_signature(data).merge(
         was: previous_changes[data[:at]].try(:first) || send("#{data[:at]}_was")
       )
-      Reactor::Event.reschedule(name, event) if should_fire_reactor_event?(data)
+      Reactor::Event.reschedule(name, **event) if should_fire_reactor_event?(data)
     end
   end
 
   def schedule_events
     self.class.events.each do |name, data|
       event = event_data_for_signature(data)
-      Reactor::Event.publish(name, event) if should_fire_reactor_event?(data)
+      Reactor::Event.publish(name, **event) if should_fire_reactor_event?(data)
     end
   end
 

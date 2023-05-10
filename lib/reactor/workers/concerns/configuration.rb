@@ -7,7 +7,7 @@ module Reactor
 
       included do
         include Sidekiq::Worker
-        
+
         class_attribute *CONFIG
       end
 
@@ -16,13 +16,13 @@ module Reactor
           CONFIG.all? {|field| !self.send(field).nil? }
         end
 
-        def perform_where_needed(data)
+        def perform_where_needed(**data)
           if deprecated
             return
           elsif delay > 0
-            event_queue.perform_in(delay, data)
+            event_queue.perform_in(delay, **data)
           else
-            event_queue.perform_async(data)
+            event_queue.perform_async(**data)
           end
           source
         end
@@ -37,10 +37,10 @@ module Reactor
         self.class.configured?
       end
 
-      def perform(data)
+      def perform(**data)
         raise_unconfigured! unless configured?
         return :__perform_aborted__ unless should_perform?
-        event = Reactor::Event.new(data)
+        event = Reactor::Event.new(**data)
         if action.is_a?(Symbol)
           source.send(action, event)
         else
