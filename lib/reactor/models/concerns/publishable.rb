@@ -6,7 +6,7 @@ module Reactor::Publishable
     after_commit :reschedule_events_on_update, if: :persisted?, on: :update
   end
 
-  def publish(name, data = {})
+  def publish(name, **data)
     Reactor::Event.publish(name, data.merge(actor: self) )
   end
 
@@ -17,7 +17,7 @@ module Reactor::Publishable
   end
 
   module ClassMethods
-    def publishes(name, data = {})
+    def publishes(name, **data)
       events[name] = data
     end
 

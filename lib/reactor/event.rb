@@ -4,7 +4,7 @@ class Reactor::Event
   sidekiq_options queue: ENV['REACTOR_QUEUE'] || Sidekiq.default_worker_options['queue']
 
   CONSOLE_CONFIRMATION_MESSAGE = <<-eos
-    It looks like you are on a production console. Only fire an event if you intend to trigger 
+    It looks like you are on a production console. Only fire an event if you intend to trigger
     all of its subscribers. In order to proceed, you must pass `srsly: true` in the event data. To
     configure Reactor to ignore this validation, set `ENV['REACTOR_CONSOLE_ENABLED']` to a value.
   eos
@@ -60,7 +60,7 @@ class Reactor::Event
       new.perform(name, data)
     end
 
-    def publish(name, data = {})
+    def publish(name, **data)
       if defined?(Rails::Console) && ENV['RACK_ENV'] == 'production' && data[:srsly].blank? &&
          !ENV['REACTOR_CONSOLE_ENABLED']
         raise ArgumentError.new(CONSOLE_CONFIRMATION_MESSAGE)
