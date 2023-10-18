@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     reactor (2.1.0)
-      rails (> 5.2, < 6.1)
+      rails (> 5.2, < 7.0)
       sidekiq (> 4.0, < 6.0)
 
 GEM
