@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'reactor'
   spec.version       = Reactor::VERSION
   spec.authors       = %w[winfred walt nate petermin christospappas therabidbanana]
-  spec.email         = ['gabe@hired.com', 'christos@hired.com']
+  spec.email         = %w[gabe@hired.com christos@hired.com]
   spec.description   = 'rails chrono reactor'
   spec.summary       = 'Sidekiq/ActiveRecord pubsub lib'
   spec.homepage      = ''
@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'rails', '> 5.2', '< 6.1'
+  spec.add_dependency 'rails', '> 5.2', '< 7.0'
   spec.add_dependency 'sidekiq', '> 4.0', '< 6.0'
 
   spec.add_development_dependency 'appraisal'
